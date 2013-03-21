@@ -1,7 +1,8 @@
 moodle_local_ldap
 =================
 
-Various synchronization scripts between Moodle and LDAP directories (see https://tracker.moodle.org/browse/MDL-25011 )
+Various synchronization scripts between Moodle and LDAP directories (see https://tracker.moodle.org/browse/MDL-25011 
+and https://tracker.moodle.org/browse/MDL-25054 )
 
 
 installation via git 
