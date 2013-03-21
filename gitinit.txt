@@ -1,0 +1,17 @@
+Creation du dépot local et synchro distant 
+
+cd local/ldap
+git init
+git remote add origin git@github.com:patrickpollet/moodle_local_ldap.git
+
+git push -u origin master
+#donne une erreur car mon dépot local n'a aucun commit !
+
+git status
+
+git add *
+
+git commit -am "initial commit from local/ldap"
+
+git push -u origin master
+
