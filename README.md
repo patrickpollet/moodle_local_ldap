@@ -14,8 +14,8 @@ installation via git
   echo 'local/ldap' >> .git/info/exclude
   
   
- installation via zip 
- --------------------
+installation via zip 
+--------------------
  
   collect a zip file from this github repository
   
@@ -29,19 +29,19 @@ installation via git
    
 In both case you should have the following structure in local/ldap directory
 
-ldap/
-├── cli
-│   ├── sync_cohorts_attribute.php
-│   ├── sync_cohorts.php
-│   ├── sync_moodle_cohorts_2.sh
-│   └── sync_moodle_cohorts.sh
-├── db
-├── gitinit.txt
-├── lang
-│   ├── en
-│   └── fr
-└── README.md
-
+ * ldap/
+ * ├── cli
+ * │   ├── sync_cohorts_attribute.php
+ * │   ├── sync_cohorts.php
+ * │   ├── sync_moodle_cohorts_2.sh
+ * │   └── sync_moodle_cohorts.sh
+ * ├── db
+ * ├── gitinit.txt
+ * ├── lang
+ * │   ├── en
+ * │   └── fr
+ * └── README.md
+ 
 
 setup for synching Moodle cohorts with LDAP groups
 --------------------------------------------------
