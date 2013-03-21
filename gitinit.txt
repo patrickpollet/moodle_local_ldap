@@ -4,8 +4,8 @@ cd local/ldap
 git init
 git remote add origin git@github.com:patrickpollet/moodle_local_ldap.git
 
-git push -u origin master
-#donne une erreur car mon dépot local n'a aucun commit !
+#fetch an eventual README
+git pull origin master
 
 git status
 
