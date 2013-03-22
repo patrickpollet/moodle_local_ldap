@@ -5,6 +5,8 @@ Various synchronization scripts between Moodle and LDAP directories (see https:/
 and https://tracker.moodle.org/browse/MDL-25054 )
 
 
+Better documentation in progress in the wiki https://github.com/patrickpollet/moodle_local_ldap/wiki
+
 installation via git 
 --------------------
 
@@ -94,4 +96,6 @@ setup for synching Moodle cohorts with all values of some LDAP attribute
 usage 
 -----
 
-see sample sh scripts in ldap/cli    
+see sample sh scripts in ldap/cli   
+
+
