@@ -227,7 +227,7 @@ class auth_plugin_cohort extends auth_plugin_ldap {
         //$group = textlib::convert($group, 'utf-8', $this->config->ldapencoding);
 
         if ($CFG->debug_ldap_groupes){
-            pp_print_object("connexion ldap RFC: ", $ldapconnection);
+            pp_print_object("connecting to ldap RFC: ", $ldapconnection);
         }
         if (!$ldapconnection) {
             return $ret;
@@ -253,7 +253,7 @@ class auth_plugin_cohort extends auth_plugin_ldap {
             if (!empty ($resultg) AND ldap_count_entries($ldapconnection, $resultg)) {
                 $groupe = ldap_get_entries($ldapconnection, $resultg);
                 if ($CFG->debug_ldap_groupes){
-                    pp_print_object("groupe: ", $groupe);
+                    pp_print_object("group : ", $groupe);
                 }
 
                 for ($g = 0; $g < (sizeof($groupe[0][$this->config->memberattribute]) - 1); $g++) {
@@ -261,7 +261,7 @@ class auth_plugin_cohort extends auth_plugin_ldap {
                     $membre = trim($groupe[0][$this->config->memberattribute][$g]);
                     if ($membre != "") { //*3
                         if ($CFG->debug_ldap_groupes){
-                            pp_print_object("membre : ", $membre);
+                            pp_print_object("member : ", $membre);
                         }
                         // try to speed the search if the member value is
                         // either a simple username (thus must match the Moodle username)
@@ -323,7 +323,7 @@ class auth_plugin_cohort extends auth_plugin_ldap {
             }
         }
         if ($CFG->debug_ldap_groupes){
-            pp_print_object("retour get_g_m ", $ret);
+            pp_print_object("return of get_group_members_rfc ", $ret);
         }
         $this->ldap_close();
         return $ret;
@@ -340,7 +340,7 @@ class auth_plugin_cohort extends auth_plugin_ldap {
         $ret = array ();
         $ldapconnection = $this->ldap_connect();
         if ($CFG->debug_ldap_groupes){
-            pp_print_object("connexion ldap AD: ", $ldapconnection);
+            pp_print_object("connecting to ldap AD: ", $ldapconnection);
         }
         if (!$ldapconnection) {
             return $ret;
@@ -468,7 +468,7 @@ class auth_plugin_cohort extends auth_plugin_ldap {
             }
         }
         if ($CFG->debug_ldap_groupes) {
-            pp_print_object("retour get_g_m ", $ret);
+            pp_print_object("return get_group_members_ad ", $ret);
         }
         $this->ldap_close();
         return $ret;
@@ -606,7 +606,7 @@ if ( !is_enabled_auth('cas') && !is_enabled_auth('ldap')) {
     error_log('[AUTH CAS] ' . get_string('pluginnotenabled', 'auth_ldap'));
     die;
 }
-
+$starttime = microtime();
 $plugin = new auth_plugin_cohort();
 
 //force search the hard way in my place where member attribute value IS xx=moodleusername,ou=xxxx
@@ -635,7 +635,7 @@ if ($CFG->debug_ldap_groupes){
 
 
 foreach ($ldap_groups as $group=>$groupname) {
-    print "traitement du groupe " . $groupname .PHP_EOL;
+    print "processing LDAP group " . $groupname .PHP_EOL;
     $params = array (
         'idnumber' => $groupname
     );
@@ -645,7 +645,15 @@ foreach ($ldap_groups as $group=>$groupname) {
     if (!$cohort = $DB->get_record('cohort', $params, '*')) {
         
         if (empty($CFG->cohort_synching_ldap_groups_autocreate_cohorts)) {
-            print ("ignore la cohorte $groupname qui n'existe pas dans Moodle".PHP_EOL);
+            print ("ignoring $groupname that does not exist in Moodle (autocreation is off)".PHP_EOL);
+            continue;
+        }
+        
+        $ldap_members = $plugin->ldap_get_group_members($groupname);
+        
+        // do not create yet the cohort if no known Moodle users are concerned
+        if (count($ldap_members)==0) {
+            print "not autocreating empty cohort " . $groupname .PHP_EOL;
             continue;
         }
     
@@ -655,13 +663,14 @@ foreach ($ldap_groups as $group=>$groupname) {
         //$cohort->component='sync_ldap';
         $cohort->description='cohorte synchronisée avec notre LDAP';
         $cohortid = cohort_add_cohort($cohort);
-        print "creation cohorte " . $group .PHP_EOL;
+        print "creating cohort " . $group .PHP_EOL;
 
     } else {
         $cohortid = $cohort->id;
+        $ldap_members = $plugin->ldap_get_group_members($groupname);
     }
-    //    print ($cohortid." ");
-    $ldap_members = $plugin->ldap_get_group_members($groupname);
+ 
+
     if ($CFG->debug_ldap_groupes){
         pp_print_object("members of LDAP group $groupname known to Moodle", $ldap_members);
     }
@@ -673,9 +682,9 @@ foreach ($ldap_groups as $group=>$groupname) {
     foreach ($cohort_members as $userid => $user) {
         if (!isset ($ldap_members[$userid])) {
             cohort_remove_member($cohortid, $userid);
-            print "desinscription de " .
+            print "removing " .
             $user->username .
-            " de la cohorte " .
+            " from cohort " .
             $groupname .
             PHP_EOL;
         }
@@ -684,9 +693,12 @@ foreach ($ldap_groups as $group=>$groupname) {
     foreach ($ldap_members as $userid => $username) {
         if (!$plugin->cohort_is_member($cohortid, $userid)) {
             cohort_add_member($cohortid, $userid);
-            print "inscription de " . $username . " à la cohorte " . $groupname .PHP_EOL;
+            print "adding " . $username . " to cohort " . $groupname .PHP_EOL;
         }
     }
     //break;
 
 }
+
+$difftime = microtime_diff($starttime, microtime());
+print("Execution took ".$difftime." seconds".PHP_EOL);

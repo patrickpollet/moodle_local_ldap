@@ -303,7 +303,7 @@ if ( !is_enabled_auth('cas') && !is_enabled_auth('ldap')) {
     error_log('[AUTH CAS] ' . get_string('pluginnotenabled', 'auth_ldap'));
     die;
 }
-
+$starttime = microtime();
 $plugin = new auth_plugin_cohort();
 
 $cohort_names = $plugin->get_attribute_distinct_values();
@@ -314,7 +314,7 @@ if ($CFG->cohort_synching_ldap_attribute_verbose){
 
 
 foreach ($cohort_names as $n=>$cohortname) {
-    print "traitement des " . $cohortname .PHP_EOL;
+    print "processing cohort " . $cohortname .PHP_EOL;
     $params = array (
         'idnumber' => $cohortname
     );
@@ -324,7 +324,15 @@ foreach ($cohort_names as $n=>$cohortname) {
     if (!$cohort = $DB->get_record('cohort', $params, '*')) {
         
         if (empty($CFG->cohort_synching_ldap_attribute_autocreate_cohorts)) {
-            print ("ignore la cohorte $cohortname qui n'existe pas dans Moodle".PHP_EOL);
+             print ("ignoring $cohortname that does not exist in Moodle (autocreation is off)".PHP_EOL);
+            continue;
+        }
+        
+        $ldap_members = $plugin->get_users_having_attribute_value ($cohortname);
+        
+        // do not create yet the cohort if no known Moodle users are concerned
+        if (count($ldap_members)==0) {
+            print "not creating empty cohort " . $cohortname .PHP_EOL;
             continue;
         }
           
@@ -334,13 +342,14 @@ foreach ($cohort_names as $n=>$cohortname) {
         $cohort->contextid = get_system_context()->id;
         $cohort->description='cohorte synchronisée avec attribut LDAP '.$plugin->config->cohort_synching_ldap_attribute_attribute;
         $cohortid = cohort_add_cohort($cohort);
-        print "creation cohorte " . $cohortname .PHP_EOL;
+        print "creating cohort " . $cohortname .PHP_EOL;
 
     } else {
         $cohortid = $cohort->id;
+        $ldap_members = $plugin->get_users_having_attribute_value ($cohortname);
     }
     //    print ($cohortid." ");
-    $ldap_members = $plugin->get_users_having_attribute_value ($cohortname);
+    
     if ($CFG->cohort_synching_ldap_attribute_verbose){
         pp_print_object("members of LDAP  $cohortname known to Moodle", $ldap_members);
     }
@@ -352,9 +361,9 @@ foreach ($cohort_names as $n=>$cohortname) {
     foreach ($cohort_members as $userid => $user) {
         if (!isset ($ldap_members[$userid])) {
            cohort_remove_member($cohortid, $userid);
-            print "desinscription de " .
+            print "removing " .
             $user->username .
-            " de la cohorte " .
+            " from cohort " .
             $cohortname .
             PHP_EOL;
         }
@@ -363,9 +372,11 @@ foreach ($cohort_names as $n=>$cohortname) {
     foreach ($ldap_members as $userid => $username) {
         if (!$plugin->cohort_is_member($cohortid, $userid)) {
             cohort_add_member($cohortid, $userid);
-            print "inscription de " . $username . " à la cohorte " . $cohortname .PHP_EOL;
+            print "adding " . $username . " to cohort " . $cohortname .PHP_EOL;
         }
     }
    //break;
 
 }
+$difftime = microtime_diff($starttime, microtime());
+print("Execution took ".$difftime." seconds".PHP_EOL);
