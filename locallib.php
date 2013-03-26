@@ -102,11 +102,11 @@ class auth_plugin_cohort extends auth_plugin_ldap {
          * is in mixed case in the LDAP , such as sAMAccountName instead of samaccountname
          * If your cohorts are not populated by this script try setting this value 
          */
-        if (!empty($extra->ldap_real_user_attribute)) {
+        if (!empty($extra->real_user_attribute)) {
             if ($CFG->debug_ldap_groupes){
-                pp_print_object("using {$extra->ldap_real_user_attribute} as naming attribute instead of {$this->config->user_attribute}",'');
+                pp_print_object("using {$extra->real_user_attribute} as naming attribute instead of {$this->config->user_attribute}",'');
             }
-            $this->config->user_attribute= $extra->ldap_real_user_attribute;
+            $this->config->user_attribute= $extra->real_user_attribute;
         }
         
         //override if needed the object class defined in Moodle's LDAP settings
