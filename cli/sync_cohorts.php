@@ -57,12 +57,12 @@
  * objectclass
  * 
  * and the following default values that can be altered in settings page
- * $CFG->ldap_group_attribute='cn';          // in case your groups are not cn=xxx,
- * $CFG->ldap_group_class='groupofuniquenames'; // in case your groups are of class group ...
- * $CFG->ldap_real_user_attribute='uid';     // in case your user_attribute is in mixed case in LDAP (sAMAccountName) 
- * $CFG->ldap_process_nested_groups=0;       // turn on nested groups
- * $CFG->debug_ldap_groupes=false;           // turn on extensive debug upon running
- * $CFG->cohort_synching_ldap_groups_autocreate_cohorts // if false will not create missing cohorts (admin must create them before) 
+ * group_attribute='cn';          // in case your groups are not cn=xxx,
+ * group_class='groupofuniquenames'; // in case your groups are of class group ...
+ * real_user_attribute='uid';     // in case your user_attribute is in mixed case in LDAP (sAMAccountName) 
+ * process_nested_groups=0;       // turn on nested groups
+ * debug_ldap_groupes=false;           // turn on extensive debug upon running
+ * cohort_synching_ldap_groups_autocreate_cohorts // if false will not create missing cohorts (admin must create them before) 
  * 
  * 
  */

@@ -85,6 +85,7 @@ class auth_plugin_cohort extends auth_plugin_ldap {
         $this->merge_config($extra, 'debug_ldap_groupes', false);
         $CFG->debug_ldap_groupes = $this->config->debug_ldap_groupes; // make my life easier
         
+        
         $this->merge_config($extra, 'group_attribute', 'cn');
         $this->merge_config($extra, 'group_class', 'groupOfUniqueNames');
         $this->merge_config($extra, 'process_nested_groups', 0);
@@ -95,12 +96,11 @@ class auth_plugin_cohort extends auth_plugin_ldap {
          $this->merge_config($extra, 'cohort_synching_ldap_groups_autocreate_cohorts',false);
          $this->merge_config($extra, 'cohort_synching_ldap_attribute_autocreate_cohorts',false);
          
-        
-              
+                 
          /** Moodle DO convert to lowercase all LDAP attributes in setting screens
          * this cause an issue when searching LDAP group members when user's naming attribute
          * is in mixed case in the LDAP , such as sAMAccountName instead of samaccountname
-         * If your cohorts are not populated by this script try setting this value in config.php
+         * If your cohorts are not populated by this script try setting this value 
          */
         if (!empty($extra->ldap_real_user_attribute)) {
             if ($CFG->debug_ldap_groupes){
@@ -133,8 +133,8 @@ class auth_plugin_cohort extends auth_plugin_ldap {
     }
     /**
      * 
-     * Enter description here ...
-     * @param unknown_type $from
+     * merge configuration setting 
+     * @param unknown_type $from 
      * @param unknown_type $key
      * @param unknown_type $default
      */
@@ -694,10 +694,6 @@ class auth_plugin_cohort extends auth_plugin_ldap {
 
 }
       
-
-
-
-
 
 
 /**

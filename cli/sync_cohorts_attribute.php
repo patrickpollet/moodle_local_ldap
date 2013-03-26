@@ -61,11 +61,11 @@
  * objectclass
  * 
  * and the following default values that can be altered in settings page
- * $CFG->cohort_synching_ldap_attribute_attribute='eduPersonAffiliation';     // adjust to the attribute to search for
- * $CFG->cohort_synching_ldap_attribute_idnumbers='comma separated list of target cohorts idnumbers'; // if missing ALL distinct values of the attribute will produce a synched cohort
- * $CFG->debug_ldap_groupes=false;           // turn on extensive debug upon running
- * $CFG->cohort_synching_ldap_attribute_objectclass // if set override default value inherited from LDAP auth plugin 
- * $CFG->cohort_synching_ldap_attribute_autocreate_cohorts // if false will not create missing cohorts (admin must create them before) 
+ * cohort_synching_ldap_attribute_attribute='eduPersonAffiliation';     // adjust to the attribute to search for
+ * cohort_synching_ldap_attribute_idnumbers='comma separated list of target cohorts idnumbers'; // if missing ALL distinct values of the attribute will produce a synched cohort
+ * debug_ldap_groupes=false;           // turn on extensive debug upon running
+ * cohort_synching_ldap_attribute_objectclass // if set override default value inherited from LDAP auth plugin 
+ * cohort_synching_ldap_attribute_autocreate_cohorts // if false will not create missing cohorts (admin must create them before) 
  * 
  */
 
