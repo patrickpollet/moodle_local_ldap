@@ -34,11 +34,11 @@ $string['synccohortattribute_info']='Permet de synchroniser des cohortes Moodle 
 $string['cohort_synching_ldap_attribute_attribute']='Nom de l\'attribut ';
 $string['cohort_synching_ldap_attribute_attribute_desc']='nom de l\'attribut à utiliser pour determiner les cohortes (respecter la casse) ';
 
-$string['cohort_synching_ldap_attribute_idnumbers']='Target cohorts idnumbers';
+$string['cohort_synching_ldap_attribute_idnumbers']='Identifiants des cohortes à traiter';
 $string['cohort_synching_ldap_attribute_idnumbers_desc']='une liste separée par des virgules des numéro d\'identification des cohortes à traiter.
  Si vide, chaque valeur différente de l\'attribut recherché produira une cohorte synchronisée';
 
-$string['cohort_synching_ldap_attribute_objectclass']='User class';
+$string['cohort_synching_ldap_attribute_objectclass']='Classe utilisateur';
 $string['cohort_synching_ldap_attribute_objectclass_desc']='si defini, remplace la valeur de la classe des utilisateurs définie dans la configuration LDAP ou CAS ';
 
 $string['cohort_synching_ldap_attribute_autocreate_cohorts']='Créer les cohortes automatiquement';
