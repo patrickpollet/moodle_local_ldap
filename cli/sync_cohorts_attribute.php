@@ -60,11 +60,10 @@
  * member_attribute_isdn
  * objectclass
  * 
- * and the following default values that can be altered in Moodle's
- * config.php file
+ * and the following default values that can be altered in settings page
  * $CFG->cohort_synching_ldap_attribute_attribute='eduPersonAffiliation';     // adjust to the attribute to search for
  * $CFG->cohort_synching_ldap_attribute_idnumbers='comma separated list of target cohorts idnumbers'; // if missing ALL distinct values of the attribute will produce a synched cohort
- * $CFG->cohort_synching_ldap_attribute_verbose=false;           // turn on extensive debug upon running
+ * $CFG->debug_ldap_groupes=false;           // turn on extensive debug upon running
  * $CFG->cohort_synching_ldap_attribute_objectclass // if set override default value inherited from LDAP auth plugin 
  * $CFG->cohort_synching_ldap_attribute_autocreate_cohorts // if false will not create missing cohorts (admin must create them before) 
  * 
@@ -78,226 +77,12 @@
 define('CLI_SCRIPT', true);
 
 require (dirname(dirname(dirname(dirname(__FILE__)))) . '/config.php');
-require_once ($CFG->dirroot . '/group/lib.php');
-require_once ($CFG->dirroot . '/cohort/lib.php');
 
-require_once ($CFG->dirroot . '/auth/ldap/auth.php');
+require (dirname(dirname(__FILE__)) . '/locallib.php');
 
-/**
- * CAS authentication plugin.
- * extended to fetch LDAP groups and to be cohort aware
- */
-class auth_plugin_cohort extends auth_plugin_ldap {
-
-
-    /**
-     * Constructor.
-     */
-
-    function auth_plugin_cohort() {
-        global $CFG;
-        // revision March 2013 needed to fetch the proper LDAP parameters
-        // host, context ... from table config_plugins see comments in https://tracker.moodle.org/browse/MDL-25011
-        if (is_enabled_auth('cas')) {
-            $this->authtype = 'cas';
-            $this->roleauth = 'auth_cas';
-            $this->errorlogtag = '[AUTH CAS] ';
-        } else if (is_enabled_auth('ldap')){ 
-            $this->authtype = 'ldap';
-            $this->roleauth = 'auth_ldap';
-            $this->errorlogtag = '[AUTH LDAP] '; 
-        } else {
-            error_log('[SYNCH COHORTS] ' . get_string('pluginnotenabled', 'auth_ldap'));
-            die;
-        }
-        
-        $this->init_plugin($this->authtype);
-        //TODO must be in some setting screen Currently in config.php
-        $this->config->cohort_synching_ldap_attribute_attribute = !empty($CFG->cohort_synching_ldap_attribute_attribute)?$CFG->cohort_synching_ldap_attribute_attribute:'eduPersonAffiliation';
-        if (!empty($CFG->cohort_synching_ldap_attribute_idnumbers)) {
-            $this->config->cohort_synching_ldap_attribute_idnumbers = explode(',',$CFG->cohort_synching_ldap_attribute_idnumbers);
-        } else {
-            $this->config->cohort_synching_ldap_attribute_idnumbers =array(); 
-        }
-        //override if needed the object class defined in Moodle's LDAP settings
-        //useful to restrict this synching to a certain category of LDAP users such as students 
-        if (! empty($CFG->cohort_synching_ldap_attribute_objectclass)) {
-            $this->config->objectclass=$CFG->cohort_synching_ldap_attribute_objectclass;
-        }
-         
-
-        if ($CFG->cohort_synching_ldap_attribute_verbose){
-            pp_print_object('plugin config',$this->config);
-        }
-
-    }
-      
-    /**
-     * 
-     * returns the distinct values of the target LDAP attribute
-     * these will be the idnumbers of the synched Moodle cohorts
-     * @returns array of string 
-     */
-    function get_attribute_distinct_values() {
-       
-        //return array ('affiliate','retired','student','faculty','staff','employee','affiliate','member','alum','emeritus','researcher');
-       
-        global $CFG, $DB;
-        // only these cohorts will be synched 
-        if (!empty($this->config->cohort_synching_ldap_attribute_idnumbers )) {
-            return $this->config->cohort_synching_ldap_attribute_idnumbers ;
-        }
-        
-        
-        //build a filter to fetch all users having something in the target LDAP attribute 
-        $filter = '(&('.$this->config->user_attribute.'=*)'.$this->config->objectclass.')';
-        $filter='(&'.$filter.'('.$this->config->cohort_synching_ldap_attribute_attribute.'=*))';
-        if ($CFG->cohort_synching_ldap_attribute_verbose) {
-            pp_print_object('looking for ',$filter);
-        }
-
-        $ldapconnection = $this->ldap_connect();
-
-        $contexts = explode(';', $this->config->contexts);
-        if (!empty($this->config->create_context)) {
-              array_push($contexts, $this->config->create_context);
-        }
-        $matchings=array();
-
-        foreach ($contexts as $context) {
-            $context = trim($context);
-            if (empty($context)) {
-                continue;
-            }
-
-            if ($this->config->search_sub) {
-                // Use ldap_search to find first user from subtree
-                $ldap_result = ldap_search($ldapconnection, $context,
-                                           $filter,
-                                           array($this->config->cohort_synching_ldap_attribute_attribute));
-            } else {
-                // Search only in this context
-                $ldap_result = ldap_list($ldapconnection, $context,
-                                         $filter,
-                                         array($this->config->cohort_synching_ldap_attribute_attribute));
-            }
-
-            if(!$ldap_result) {
-                continue;
-            }
-
-            // this API function returns all attributes as an array 
-            // wether they are single or multiple 
-            $users = ldap_get_entries_moodle($ldapconnection, $ldap_result);
-            
-            // Add found DISTINCT values to list
-           for ($i = 0; $i < count($users); $i++) {
-               $count=$users[$i][$this->config->cohort_synching_ldap_attribute_attribute]['count'];
-               for ($j=0; $j <$count; $j++) {
-                   $value=  textlib::convert($users[$i][$this->config->cohort_synching_ldap_attribute_attribute][$j],
-                                $this->config->ldapencoding, 'utf-8');
-                   if (! in_array ($value, $matchings)) {
-                       array_push($matchings,$value);
-                   }
-               }
-            }
-        }
-
-        $this->ldap_close();   
-        return $matchings;
-        
-        
-        
-    }
-    
-     
-    function get_users_having_attribute_value ($attributevalue) {
-            global $CFG, $DB;
-        //build a filter
- 
-        $filter = '(&('.$this->config->user_attribute.'=*)'.$this->config->objectclass.')';
-        $filter='(&'.$filter.'('.$this->config->cohort_synching_ldap_attribute_attribute.'='.ldap_addslashes($attributevalue).'))';
-        if ($CFG->cohort_synching_ldap_attribute_verbose) {
-            pp_print_object('looking for ',$filter);
-        }
-        // call Moodle ldap_get_userlist that return it as an array with Moodle user attributes names
-        $matchings=$this->ldap_get_userlist($filter);
-        // return the FIRST entry found
-        if (empty($matchings)) {
-            if ($CFG->cohort_synching_ldap_attribute_verbose) {
-                pp_print_object('not found','');
-            }
-            return array();
-        }
-     if ($CFG->cohort_synching_ldap_attribute_verbose) {
-             pp_print_object('found ',count($matchings). ' matching users in LDAP');
-        }
-        
-          $ret = array ();
-        //remove all matching LDAP users unkown to Moodle
-        foreach ($matchings as $member) {
-            $params = array (
-                'username' => $member
-            );
-            if ($user = $DB->get_record('user', $params, 'id,username')) {
-                $ret[$user->id] = $user->username;
-            }
-        }
-        if ($CFG->cohort_synching_ldap_attribute_verbose) {
-                pp_print_object('found ',count($ret). ' matching users known to Moodle');
-        }
-        return $ret;
-            
-    }
-
-
-
-    function get_cohort_members($cohortid) {
-        global $DB;
-        $sql = " SELECT u.id,u.username
-                          FROM {user} u
-                         JOIN {cohort_members} cm ON (cm.userid = u.id AND cm.cohortid = :cohortid)
-                        WHERE u.deleted=0";
-        $params['cohortid'] = $cohortid;
-        return $DB->get_records_sql($sql, $params);
-    }
-
-    function cohort_is_member($cohortid, $userid) {
-        global $DB;
-        $params = array (
-            'cohortid' => $cohortid,
-            'userid' => $userid
-        );
-        return $DB->record_exists('cohort_members', $params);
-    }
-
-}
-
-/**
- *
- * verbose debugging function
- * @param unknown_type $title
- * @param unknown_type $obj
- */
-function pp_print_object($title, $obj) {
-    print $title;
-    if (is_object($obj) || is_array($obj)) {
-        print_r($obj);
-    } else  {
-        print ($obj .PHP_EOL);
-    }
-}
 
 // Ensure errors are well explained
 $CFG->debug = DEBUG_NORMAL;
-// Disable verbose mode of auth_plugin_cohort()
-if (empty($CFG->cohort_synching_ldap_attribute_verbose)) {
-    $CFG->cohort_synching_ldap_attribute_verbose=false; // remove PHP notices
-}
-
-// testing code 
-//$CFG->cohort_synching_ldap_attribute_verbose=1;
-//$CFG->cohort_synching_ldap_attribute_idnumbers="faculty,staff,student,teacher"; 
 
 if ( !is_enabled_auth('cas') && !is_enabled_auth('ldap')) {
     error_log('[AUTH CAS] ' . get_string('pluginnotenabled', 'auth_ldap'));
@@ -308,10 +93,10 @@ $plugin = new auth_plugin_cohort();
 
 $cohort_names = $plugin->get_attribute_distinct_values();
 
-if ($CFG->cohort_synching_ldap_attribute_verbose){ 
+
+if ($CFG->debug_ldap_groupes){ 
     pp_print_object("cohort idnumbers", $cohort_names);
 }    
-
 
 foreach ($cohort_names as $n=>$cohortname) {
     print "processing cohort " . $cohortname .PHP_EOL;
@@ -323,7 +108,7 @@ foreach ($cohort_names as $n=>$cohortname) {
     // and set their IDNUMBER to the exact value of the corresponding attribute in LDAP  
     if (!$cohort = $DB->get_record('cohort', $params, '*')) {
         
-        if (empty($CFG->cohort_synching_ldap_attribute_autocreate_cohorts)) {
+        if (empty($plugin->config->cohort_synching_ldap_attribute_autocreate_cohorts)) {
              print ("ignoring $cohortname that does not exist in Moodle (autocreation is off)".PHP_EOL);
             continue;
         }
@@ -339,8 +124,8 @@ foreach ($cohort_names as $n=>$cohortname) {
         
         $cohort = new StdClass();
         $cohort->name = $cohort->idnumber = $cohortname;
-        $cohort->contextid = get_system_context()->id;
-        $cohort->description='cohorte synchronisée avec attribut LDAP '.$plugin->config->cohort_synching_ldap_attribute_attribute;
+        $cohort->contextid = context_system::instance()->id;
+        $cohort->description=get_string('cohort_synchronized_with_attribute','local_ldap',$plugin->config->cohort_synching_ldap_attribute_attribute);
         $cohortid = cohort_add_cohort($cohort);
         print "creating cohort " . $cohortname .PHP_EOL;
 
@@ -350,22 +135,18 @@ foreach ($cohort_names as $n=>$cohortname) {
     }
     //    print ($cohortid." ");
     
-    if ($CFG->cohort_synching_ldap_attribute_verbose){
+    if ($CFG->debug_ldap_groupes){
         pp_print_object("members of LDAP  $cohortname known to Moodle", $ldap_members);
     }
 
     $cohort_members = $plugin->get_cohort_members($cohortid);
-   // if ($CFG->cohort_synching_ldap_attribute_verbose){
+   // if ($CFG->debug_ldap_groupes){
    //     pp_print_object("current members of cohort $cohortname", $cohort_members);
    // }
     foreach ($cohort_members as $userid => $user) {
         if (!isset ($ldap_members[$userid])) {
            cohort_remove_member($cohortid, $userid);
-            print "removing " .
-            $user->username .
-            " from cohort " .
-            $cohortname .
-            PHP_EOL;
+            print "removing " .$user->username ." from cohort " . $cohortname . PHP_EOL;
         }
     }
 
