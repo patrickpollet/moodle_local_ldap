@@ -45,26 +45,26 @@ if ($hassiteconfig) {
                     get_string('synccohortgroup_info', 'local_ldap')));
                     
 
-    $name = 'ldap_group_attribute';
+    $name = 'group_attribute';
     $title = get_string($name,'local_ldap');
     $description = get_string($name.'_desc','local_ldap');  
     $setting = new admin_setting_configtext('local_ldap/'.$name, $title, $description, 'cn');
     $settings ->add($setting);   
                     
-    $name = 'ldap_group_class';
+    $name = 'group_class';
     $title = get_string($name,'local_ldap');
     $description = get_string($name.'_desc','local_ldap');  
     $setting = new admin_setting_configtext('local_ldap/'.$name, $title, $description, 'groupOfUniqueNames');
     $settings ->add($setting);   
    
-    $name = 'ldap_real_user_attribute';
+    $name = 'real_user_attribute';
     $title = get_string($name,'local_ldap');
     $description = get_string($name.'_desc','local_ldap');  
     $setting = new admin_setting_configtext('local_ldap/'.$name, $title, $description,'');
     $settings ->add($setting);   
    
                     
-    $name = 'ldap_process_nested_groups';
+    $name = 'process_nested_groups';
     $title = get_string($name,'local_ldap');
     $description = get_string($name.'_desc','local_ldap');  
     $setting = new admin_setting_configcheckbox('local_ldap/'.$name, $title, $description, false);
