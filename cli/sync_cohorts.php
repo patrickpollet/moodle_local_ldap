@@ -131,7 +131,7 @@ foreach ($ldap_groups as $group=>$groupname) {
         $cohort->contextid = context_system::instance()->id;
         //$cohort->component='sync_ldap';
         $cohort->description=get_string('cohort_synchronized_with_group','local_ldap',$groupname);
-        print_r($cohort);
+        //print_r($cohort);
         $cohortid = cohort_add_cohort($cohort);
         print "creating cohort " . $group .PHP_EOL;
 
@@ -152,11 +152,7 @@ foreach ($ldap_groups as $group=>$groupname) {
     foreach ($cohort_members as $userid => $user) {
         if (!isset ($ldap_members[$userid])) {
             cohort_remove_member($cohortid, $userid);
-            print "removing " .
-            $user->username .
-            " from cohort " .
-            $groupname .
-            PHP_EOL;
+            print "removing " .$user->username ." from cohort " .$groupname . PHP_EOL;
         }
     }
 
