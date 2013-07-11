@@ -12,7 +12,7 @@ installation via git
 
   cd /var/www/moodle
   
-  git clone git@github.com:patrickpollet/moodle_local_ldap.git local/ldap
+  git clone https://github.com/patrickpollet/moodle_local_ldap.git local/ldap
   
   echo 'local/ldap' >> .git/info/exclude
   
