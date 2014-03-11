@@ -95,7 +95,20 @@ if ( !is_enabled_auth('cas') && !is_enabled_auth('ldap')) {
 }
 $starttime = microtime();
 $plugin = new auth_plugin_cohort();
+/**
+ * 07/03/2014 undocumented feature upon request of IT <it@flora38.ch>
+ * Search LDAP groups ONLY in these contexts,overriding current LDAP uer's searching contexts
+ * if $CFG->cohort_synching_ldap_groups_contexts is set as a semi-column separated
+ * list of contexts use it instead of the LDAP/CAS auth plugin
+ * to change it add a line $CFG->cohort_synching_ldap_groups_contexts in Moodle's config.php script 
+ *  such as $CFG-> cohort_synching_ldap_groups_contexts='ou1;ou2';
+ */
 
+if (!empty($CFG->cohort_synching_ldap_groups_contexts))
+    $plugin->config->contexts= $CFG->cohort_synching_ldap_groups_contexts;
+/**
+* end of patch 07/03/2014
+ */
 $ldap_groups = $plugin->ldap_get_grouplist();
 
 if ($CFG->debug_ldap_groupes){
