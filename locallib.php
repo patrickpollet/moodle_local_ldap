@@ -165,7 +165,11 @@ class auth_plugin_cohort extends auth_plugin_ldap {
             $filter = "(&(" . $this->config->group_attribute . "=*)(objectclass=" . $this->config->group_class . "))";
         }
 
-        $contexts = explode(';', $this->config->contexts);
+        if (!empty($CFG->cohort_synching_ldap_groups_contexts))
+            $contexts = explode(';', $CFG->cohort_synching_ldap_groups_contexts);
+        else
+            $contexts = explode(';', $this->config->contexts);
+
         if (!empty ($this->config->create_context)) {
             array_push($contexts, $this->config->create_context);
         }
@@ -232,7 +236,12 @@ class auth_plugin_cohort extends auth_plugin_ldap {
         if ($CFG->debug_ldap_groupes){
             pp_print_object("queryg: ", $queryg);
         }
-        $contexts = explode(';', $this->config->contexts);
+
+        if (!empty($CFG->cohort_synching_ldap_groups_contexts))
+            $contexts = explode(';', $CFG->cohort_synching_ldap_groups_contexts);
+        else
+            $contexts = explode(';', $this->config->contexts);
+
         if (!empty ($this->config->create_context)) {
             array_push($contexts, $this->config->create_context);
         }
@@ -354,8 +363,11 @@ class auth_plugin_cohort extends auth_plugin_ldap {
 
         $size = 999;
 
+        if (!empty($CFG->cohort_synching_ldap_groups_contexts))
+            $contexts = explode(';', $CFG->cohort_synching_ldap_groups_contexts);
+        else
+            $contexts = explode(';', $this->config->contexts);
 
-        $contexts = explode(';', $this->config->contexts);
         if (!empty ($this->config->create_context)) {
             array_push($contexts, $this->config->create_context);
         }
