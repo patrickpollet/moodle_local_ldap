@@ -399,7 +399,11 @@ class auth_plugin_cohort extends auth_plugin_ldap {
                             // either a simple username (thus must match the Moodle username)
                             // or xx=username with xx = the user attribute name matching Moodle's username
                             // such as uid=jdoe,ou=xxxx,ou=yyyyy
-                            $membre_tmp1 = explode(",", $membre);
+                            $membre_tmp1 = ldap_explode_dn($membre,0);
+                            array_shift($membre_tmp1);
+                            foreach($membre_tmp1 as $key=>$value) {
+                                $membre_tmp1[$key]=preg_replace("/\\\([0-9A-Fa-f]{2})/e", "''.chr(hexdec('\\1')).''", $value);
+                            }
                             if (count($membre_tmp1) > 1) {
                                 if ($CFG->debug_ldap_groupes) {
                                     pp_print_object("membre_tpl1: ", $membre_tmp1);
@@ -485,7 +489,7 @@ class auth_plugin_cohort extends auth_plugin_ldap {
         //build a filter
         // note than nested groups will be removed here, so they are NOT supported
         $filter = '(&('.$this->config->user_attribute.'=*)'.$this->config->objectclass.')';
-        $filter='(&'.$filter.'('.$dnid.'='.ldap_addslashes($dn).'))';
+        $filter='(&'.$filter.'('.$dnid.'='.$dn.'))';
         if ($CFG->debug_ldap_groupes) {
             pp_print_object('looking for ',$filter);
         }
