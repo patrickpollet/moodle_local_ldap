@@ -500,7 +500,7 @@ class auth_plugin_cohort extends auth_plugin_ldap {
         }
         if (count($matchings)>1) {
             if ($CFG->debug_ldap_groupes) {
-                pp_print_object('error more than one found for ',$count($matchings));
+                pp_print_object('error more than one found for ',count($matchings));
             }
             return false;
         }
