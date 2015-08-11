@@ -20,7 +20,7 @@
  * @package local
  * @subpackage ldap
  * @copyright 1999 onwards Martin Dougiamas and others {@link http://moodle.com}
- * @copyright 2013 onwards Patrick Pollet {@link mailto:pp@patrickpollet.net
+ * @copyright 2013 onwards Patrick Pollet {@link mailto:pp@patrickpollet.net}
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
