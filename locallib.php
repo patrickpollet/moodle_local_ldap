@@ -418,7 +418,7 @@ class local_ldap extends auth_plugin_ldap {
      * @return string[] an array of username indexed by Moodle's userid
      */
     public function ldap_get_group_members($groupe) {
-        global $DB;
+        global $CFG, $DB;
 
         if ($this->config->user_type == "ad") {
             $members = $this->ldap_get_group_members_ad($groupe);
@@ -429,7 +429,8 @@ class local_ldap extends auth_plugin_ldap {
         // Remove all LDAP users unknown to Moodle.
         foreach ($members as $member) {
             $params = array (
-                'username' => $member
+                'username' => $member,
+                'mnethostid' => $CFG->mnet_localhost_id
             );
             if ($user = $DB->get_record('user', $params, 'id,username')) {
                 $ret[$user->id] = $user->username;
@@ -508,7 +509,7 @@ class local_ldap extends auth_plugin_ldap {
     }
 
     public function get_users_having_attribute_value($attributevalue) {
-        global $DB;
+        global $CFG, $DB;
 
         // Build a filter.
         $filter = '(&('.$this->config->user_attribute.'=*)'.$this->config->objectclass.')';
@@ -527,7 +528,8 @@ class local_ldap extends auth_plugin_ldap {
         // Remove all matching LDAP users unkown to Moodle.
         foreach ($matchings as $member) {
             $params = array (
-                'username' => $member
+                'username' => $member,
+                'mnethostid' => $CFG->mnet_localhost_id
             );
             if ($user = $DB->get_record('user', $params, 'id,username')) {
                 $ret[$user->id] = $user->username;
