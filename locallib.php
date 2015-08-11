@@ -25,7 +25,7 @@
  * @package local
  * @subpackage ldap
  * @copyright 1999 onwards Martin Dougiamas and others {@link http://moodle.com}
- * @copyright 2013 onwards Patrick Pollet {@link mailto:pp@patrickpollet.net
+ * @copyright 2013 onwards Patrick Pollet {@link mailto:pp@patrickpollet.net}
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -47,13 +47,13 @@ class auth_plugin_cohort extends auth_plugin_ldap {
      * avoid infinite loop with nested groups in 'funny' directories
      * @var array
      */
-    var $anti_recursion_array;
+    protected $anti_recursion_array;
 
     /**
      * cache for found groups dn
      * @var array
-     */ 
-     var $groups_dn_cache; 
+     */
+    public $groups_dn_cache;
     
     /**
      * Constructor.
@@ -112,7 +112,7 @@ class auth_plugin_cohort extends auth_plugin_ldap {
         //override if needed the object class defined in Moodle's LDAP settings
         //useful to restrict this synching to a certain category of LDAP users such as students 
         if (! empty($extra->cohort_synching_ldap_attribute_objectclass)) {
-        if ($CFG->debug_ldap_groupes){
+            if ($CFG->debug_ldap_groupes){
                 pp_print_object("using {$extra->cohort_synching_ldap_attribute_objectclass} as object class instead of {$this->config->objectclass}",'');
             }
             $this->config->objectclass=$extra->cohort_synching_ldap_attribute_objectclass;
@@ -196,6 +196,7 @@ class auth_plugin_cohort extends auth_plugin_ldap {
             for ($i = 0; $i < count($groups) - 1; $i++) {
                 $group_cn=$groups[$i][$this->config->group_attribute][0];
                 array_push($fresult, ($groups[$i][$this->config->group_attribute][0]));
+
 
                 // keep the dn/cn in cache for processing
                 if ($this->config->process_nested_groups) {
