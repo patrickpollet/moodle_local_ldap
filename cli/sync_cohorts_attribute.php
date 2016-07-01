@@ -1,6 +1,4 @@
 <?php
-
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -22,7 +20,7 @@
  * This script is meant to be called from a cronjob to sync moodle's cohorts
  * with users having some values in an LDAP attribute
  * where the CAS/LDAP backend acts as 'master'.
- * 
+ *
  * It is based on code of sync_cohorts that synchronize Moodle's cohorts with LDAP groups
  * see https://tracker.moodle.org/browse/MDL-25011
  *
@@ -39,34 +37,33 @@
  *   - For debugging & better logging, you are encouraged to use in the command line:
  *     -d log_errors=1 -d error_reporting=E_ALL -d display_errors=0 -d html_errors=0
  *
- *THis script should be run some time after /var/www/moodle/auth/cas/cli/sync_users.php
+ * This script should be run some time after /var/www/moodle/auth/cas/cli/sync_users.php
  *
  * Performance notes:
  * We have optimized it as best as we could for PostgreSQL and MySQL, with 27K students
  * we have seen this take 10 minutes.
  *
  * @package    auth
- * @subpackage LDAP 
+ * @subpackage ldap
  * @copyright  2010 Patrick Pollet - based on code by Jeremy Guittirez
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-
 /**
  * CONFIGURATION
- * this script make use of current Moodle's LDAP/CAS settings 
- * user_attribute 
+ * This script make use of current Moodle's LDAP/CAS settings
+ * user_attribute
  * member_attribute
  * member_attribute_isdn
  * objectclass
- * 
+ *
  * and the following default values that can be altered in settings page
  * cohort_synching_ldap_attribute_attribute='eduPersonAffiliation';     // adjust to the attribute to search for
  * cohort_synching_ldap_attribute_idnumbers='comma separated list of target cohorts idnumbers'; // if missing ALL distinct values of the attribute will produce a synched cohort
  * debug_ldap_groupes=false;           // turn on extensive debug upon running
- * cohort_synching_ldap_attribute_objectclass // if set override default value inherited from LDAP auth plugin 
- * cohort_synching_ldap_attribute_autocreate_cohorts // if false will not create missing cohorts (admin must create them before) 
- * 
+ * cohort_synching_ldap_attribute_objectclass // if set override default value inherited from LDAP auth plugin
+ * cohort_synching_ldap_attribute_autocreate_cohorts // if false will not create missing cohorts (admin must create them before)
+ *
  */
 
 /**
@@ -76,12 +73,10 @@
 
 define('CLI_SCRIPT', true);
 
-require (dirname(dirname(dirname(dirname(__FILE__)))) . '/config.php');
+require(dirname(dirname(dirname(dirname(__FILE__)))) . '/config.php');
+require(dirname(dirname(__FILE__)) . '/locallib.php');
 
-require (dirname(dirname(__FILE__)) . '/locallib.php');
-
-
-// Ensure errors are well explained
+// Ensure errors are well explained.
 $CFG->debug = DEBUG_NORMAL;
 
 if ( !is_enabled_auth('cas') && !is_enabled_auth('ldap')) {
@@ -93,59 +88,54 @@ $plugin = new auth_plugin_cohort();
 
 $cohort_names = $plugin->get_attribute_distinct_values();
 
-
-if ($CFG->debug_ldap_groupes){ 
+if ($CFG->debug_ldap_groupes) {
     pp_print_object("cohort idnumbers", $cohort_names);
-}    
+}
 
-foreach ($cohort_names as $n=>$cohortname) {
+foreach ($cohort_names as $n => $cohortname) {
     print "processing cohort " . $cohortname .PHP_EOL;
     $params = array (
         'idnumber' => $cohortname
     );
-    // not that we search for cohort IDNUMBER and not name for a match 
+    // Not that we search for cohort IDNUMBER and not name for a match
     // thus it we do not autocreate cohorts, admin MUST create cohorts beforehand
-    // and set their IDNUMBER to the exact value of the corresponding attribute in LDAP  
+    // and set their IDNUMBER to the exact value of the corresponding attribute in LDAP.
     if (!$cohort = $DB->get_record('cohort', $params, '*')) {
-        
+
         if (empty($plugin->config->cohort_synching_ldap_attribute_autocreate_cohorts)) {
              print ("ignoring $cohortname that does not exist in Moodle (autocreation is off)".PHP_EOL);
             continue;
         }
-        
+
         $ldap_members = $plugin->get_users_having_attribute_value ($cohortname);
-        
-        // do not create yet the cohort if no known Moodle users are concerned
-        if (count($ldap_members)==0) {
+
+        // Do not create yet the cohort if no known Moodle users are concerned.
+        if (count($ldap_members) == 0) {
             print "not creating empty cohort " . $cohortname .PHP_EOL;
             continue;
         }
-          
-        
+
         $cohort = new StdClass();
         $cohort->name = $cohort->idnumber = $cohortname;
         $cohort->contextid = context_system::instance()->id;
-        $cohort->description=get_string('cohort_synchronized_with_attribute','local_ldap',$plugin->config->cohort_synching_ldap_attribute_attribute);
+        $cohort->description = get_string('cohort_synchronized_with_attribute', 'local_ldap',
+            $plugin->config->cohort_synching_ldap_attribute_attribute);
         $cohortid = cohort_add_cohort($cohort);
         print "creating cohort " . $cohortname .PHP_EOL;
 
     } else {
         $cohortid = $cohort->id;
-        $ldap_members = $plugin->get_users_having_attribute_value ($cohortname);
+        $ldap_members = $plugin->get_users_having_attribute_value($cohortname);
     }
-    //    print ($cohortid." ");
-    
-    if ($CFG->debug_ldap_groupes){
+
+    if ($CFG->debug_ldap_groupes) {
         pp_print_object("members of LDAP  $cohortname known to Moodle", $ldap_members);
     }
 
     $cohort_members = $plugin->get_cohort_members($cohortid);
-   // if ($CFG->debug_ldap_groupes){
-   //     pp_print_object("current members of cohort $cohortname", $cohort_members);
-   // }
     foreach ($cohort_members as $userid => $user) {
         if (!isset ($ldap_members[$userid])) {
-           cohort_remove_member($cohortid, $userid);
+            cohort_remove_member($cohortid, $userid);
             print "removing " .$user->username ." from cohort " . $cohortname . PHP_EOL;
         }
     }
@@ -156,8 +146,6 @@ foreach ($cohort_names as $n=>$cohortname) {
             print "adding " . $username . " to cohort " . $cohortname .PHP_EOL;
         }
     }
-   //break;
-
 }
 $difftime = microtime_diff($starttime, microtime());
 print("Execution took ".$difftime." seconds".PHP_EOL);

@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -28,91 +27,75 @@
 defined('MOODLE_INTERNAL') || die;
 
 if ($hassiteconfig) {
-//    require_once(dirname(__FILE__).'/lib.php');
-	    
     $settings = new admin_settingpage('local_ldap', get_string('pluginname', 'local_ldap'));
-  
-    
+
     $name = 'debug_ldap_groupes';
-    $title = get_string($name,'local_ldap');
-    $description = get_string($name.'_desc','local_ldap');  
+    $title = get_string($name, 'local_ldap');
+    $description = get_string($name.'_desc', 'local_ldap');
     $setting = new admin_setting_configcheckbox('local_ldap/'.$name, $title, $description, false);
-    $settings ->add($setting);  
-    
-    
-    $settings->add(new admin_setting_heading('synccohortgroup', 
+    $settings->add($setting);
+
+    $settings->add(new admin_setting_heading('synccohortgroup',
                     get_string('synccohortgroup', 'local_ldap'),
                     get_string('synccohortgroup_info', 'local_ldap')));
-                    
 
     $name = 'group_attribute';
-    $title = get_string($name,'local_ldap');
-    $description = get_string($name.'_desc','local_ldap');  
+    $title = get_string($name, 'local_ldap');
+    $description = get_string($name.'_desc', 'local_ldap');
     $setting = new admin_setting_configtext('local_ldap/'.$name, $title, $description, 'cn');
-    $settings ->add($setting);   
-                    
+    $settings->add($setting);
+
     $name = 'group_class';
-    $title = get_string($name,'local_ldap');
-    $description = get_string($name.'_desc','local_ldap');  
+    $title = get_string($name, 'local_ldap');
+    $description = get_string($name.'_desc', 'local_ldap');
     $setting = new admin_setting_configtext('local_ldap/'.$name, $title, $description, 'groupOfUniqueNames');
-    $settings ->add($setting);   
-   
+    $settings->add($setting);
+
     $name = 'real_user_attribute';
-    $title = get_string($name,'local_ldap');
-    $description = get_string($name.'_desc','local_ldap');  
-    $setting = new admin_setting_configtext('local_ldap/'.$name, $title, $description,'');
-    $settings ->add($setting);   
-   
-                    
+    $title = get_string($name, 'local_ldap');
+    $description = get_string($name.'_desc', 'local_ldap');
+    $setting = new admin_setting_configtext('local_ldap/'.$name, $title, $description, '');
+    $settings->add($setting);
+
     $name = 'process_nested_groups';
-    $title = get_string($name,'local_ldap');
-    $description = get_string($name.'_desc','local_ldap');  
+    $title = get_string($name, 'local_ldap');
+    $description = get_string($name.'_desc', 'local_ldap');
     $setting = new admin_setting_configcheckbox('local_ldap/'.$name, $title, $description, false);
-    $settings ->add($setting);   
+    $settings->add($setting);
 
- 
-    
     $name = 'cohort_synching_ldap_groups_autocreate_cohorts';
-    $title = get_string($name,'local_ldap');
-    $description = get_string($name.'_desc','local_ldap');  
+    $title = get_string($name, 'local_ldap');
+    $description = get_string($name.'_desc', 'local_ldap');
     $setting = new admin_setting_configcheckbox('local_ldap/'.$name, $title, $description, false);
-    $settings ->add($setting);
-                    
+    $settings->add($setting);
 
-    
-    
-    $settings->add(new admin_setting_heading('synccohortattribute', 
+    $settings->add(new admin_setting_heading('synccohortattribute',
                     get_string('synccohortattribute', 'local_ldap'),
                     get_string('synccohortattribute_info', 'local_ldap')));
-                    
 
     $name = 'cohort_synching_ldap_attribute_attribute';
-    $title = get_string($name,'local_ldap');
-    $description = get_string($name.'_desc','local_ldap');  
+    $title = get_string($name, 'local_ldap');
+    $description = get_string($name.'_desc', 'local_ldap');
     $setting = new admin_setting_configtext('local_ldap/'.$name, $title, $description, 'eduPersonAffiliation');
-    $settings ->add($setting);                 
+    $settings->add($setting);
 
     $name = 'cohort_synching_ldap_attribute_idnumbers';
-    $title = get_string($name,'local_ldap');
-    $description = get_string($name.'_desc','local_ldap');  
+    $title = get_string($name, 'local_ldap');
+    $description = get_string($name.'_desc', 'local_ldap');
     $setting = new admin_setting_configtext('local_ldap/'.$name, $title, $description, '');
-    $settings ->add($setting);   
-    
-    $name = 'cohort_synching_ldap_attribute_objectclass';
-    $title = get_string($name,'local_ldap');
-    $description = get_string($name.'_desc','local_ldap');  
-    $setting = new admin_setting_configtext('local_ldap/'.$name, $title, $description, '');
-    $settings ->add($setting);   
-                    
-    
-    $name = 'cohort_synching_ldap_attribute_autocreate_cohorts';
-    $title = get_string($name,'local_ldap');
-    $description = get_string($name.'_desc','local_ldap');  
-    $setting = new admin_setting_configcheckbox('local_ldap/'.$name, $title, $description, false);
-    $settings ->add($setting);                
-                    
-        
-    $ADMIN->add('localplugins', $settings);    
-    
-}
+    $settings->add($setting);
 
+    $name = 'cohort_synching_ldap_attribute_objectclass';
+    $title = get_string($name, 'local_ldap');
+    $description = get_string($name.'_desc', 'local_ldap');
+    $setting = new admin_setting_configtext('local_ldap/'.$name, $title, $description, '');
+    $settings->add($setting);
+
+    $name = 'cohort_synching_ldap_attribute_autocreate_cohorts';
+    $title = get_string($name, 'local_ldap');
+    $description = get_string($name.'_desc', 'local_ldap');
+    $setting = new admin_setting_configcheckbox('local_ldap/'.$name, $title, $description, false);
+    $settings->add($setting);
+
+    $ADMIN->add('localplugins', $settings);
+}
