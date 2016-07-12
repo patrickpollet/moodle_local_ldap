@@ -675,6 +675,53 @@ class local_ldap extends auth_plugin_ldap {
         return $DB->record_exists('cohort_members', $params);
     }
 
+    public function sync_cohorts_by_attribute() {
+
+    }
+
+    public function sync_cohorts_by_group() {
+        global $DB;
+
+        $ldapgroups = $this->get_ldap_grouplist();
+        foreach ($ldapgroups as $group => $groupname) {
+            if (!$cohort = $DB->get_record('cohort', array('idnumber' => $groupname), '*')) {
+                if (empty($plugin->config->cohort_synching_ldap_groups_autocreate_cohorts)) {
+                    // The cohort does not exist and auto-creation of cohorts is disabled.
+                    continue;
+                }
+                $ldapmembers = $this->ldap_get_group_members($groupname);
+                if (count($ldapmembers) == 0) {
+                    // Do not create an empty cohort.
+                    continue;
+                }
+                $cohort = new stdClass();
+                $cohort->name = $cohort->idnumber = $groupname;
+                $cohort->contextid = context_system::instance()->id;
+                $cohort->description = get_string('cohort_synchronized_with_group', 'local_ldap', $groupname);
+                $cohortid = cohort_add_cohort($cohort);
+            } else {
+                $cohortid = $cohort->id;
+                $ldapmembers = $this->ldap_get_group_members($groupname);
+            }
+
+            // Update existing membership.
+            $cohortmembers = $this->get_cohort_members($cohortid);
+
+            // Remove local Moodle users not present in LDAP.
+            foreach ($cohortmembers as $userid => $user) {
+                if (!isset($ldapmembers[$userid])) {
+                    cohort_remove_member($cohortid, $userid);
+                }
+            }
+
+            // Add LDAP users not present in the local cohort.
+            foreach ($ldapmembers as $userid => $username) {
+                if (!cohort_is_member($cohortid, $userid)) {
+                    cohort_add_member($cohortid, $userid);
+                }
+            }
+        }
+    }
 }
 
 /**
