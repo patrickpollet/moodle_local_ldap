@@ -36,11 +36,11 @@ require_once($CFG->dirroot . '/auth/ldap/auth.php');
  */
 class local_ldap extends auth_plugin_ldap {
 
-    /** @var array Avoid infinite loop with nested groups in 'funny' directories. */
-    var $anti_recursion_array;
+    // Avoid infinite loop with nested groups in 'funny' directories.
+    private $antirecursionarray;
 
-    /** @var array Cache for found groups dn. */
-    var $groups_dn_cache;
+    // Cache for found group dns.
+    private $groupdnscache;
 
     /**
      * Constructor.
@@ -90,8 +90,8 @@ class local_ldap extends auth_plugin_ldap {
         }
 
         // Cache for found groups dn; used for nested groups processing.
-        $this->groups_dn_cache      = array();
-        $this->anti_recursion_array = array();
+        $this->groupdnscache      = array();
+        $this->antirecursionarray = array();
     }
 
     /**
@@ -142,22 +142,22 @@ class local_ldap extends auth_plugin_ldap {
 
             if ($this->config->search_sub) {
                 // Use ldap_search to find first group from subtree.
-                $ldap_result = ldap_search($ldapconnection, $context, $filter, array ($this->config->group_attribute));
+                $ldapresult = ldap_search($ldapconnection, $context, $filter, array ($this->config->group_attribute));
             } else {
                 // Search only in this context.
-                $ldap_result = ldap_list($ldapconnection, $context, $filter, array ($this->config->group_attribute));
+                $ldapresult = ldap_list($ldapconnection, $context, $filter, array ($this->config->group_attribute));
             }
-            $groups = ldap_get_entries($ldapconnection, $ldap_result);
+            $groups = ldap_get_entries($ldapconnection, $ldapresult);
 
             // Add found groups to list.
             for ($i = 0; $i < count($groups) - 1; $i++) {
-                $group_cn = $groups[$i][$this->config->group_attribute][0];
+                $groupcn = $groups[$i][$this->config->group_attribute][0];
                 array_push($fresult, ($groups[$i][$this->config->group_attribute][0]));
 
                 // Keep the dn/cn in cache for processing.
                 if ($this->config->process_nested_groups) {
-                    $group_dn = $groups[$i]['dn'];
-                    $this->groups_dn_cache[$group_dn] = $group_cn;
+                    $groupdn = $groups[$i]['dn'];
+                    $this->groupdnscache[$groupdn] = $groupcn;
                 }
             }
         }
@@ -208,47 +208,47 @@ class local_ldap extends auth_plugin_ldap {
 
                 for ($g = 0; $g < (count($groupe[0][$this->config->memberattribute]) - 1); $g++) {
 
-                    $membre = trim($groupe[0][$this->config->memberattribute][$g]);
-                    if ($membre != "") {
+                    $memberstring = trim($groupe[0][$this->config->memberattribute][$g]);
+                    if ($memberstring != "") {
                         // Try to speed the search if the member value is
                         // either a simple username (thus must match the Moodle username)
                         // or xx=username with xx = the user attribute name matching Moodle's username
                         // such as uid=jdoe,ou=xxxx,ou=yyyyy.
-                        $membre_tmp1 = explode(",", $membre);
-                        if (count($membre_tmp1) > 1) {
-                            $membre_tmp2 = explode("=", trim($membre_tmp1[0]));
+                        $member = explode(",", $memberstring);
+                        if (count($member) > 1) {
+                            $memberparts = explode("=", trim($member[0]));
 
                             // Caution in Moodle LDAP attributes names are converted to lowercase
                             // see process_config in auth/ldap/auth.php.
-                            $found = textlib::strtolower($membre_tmp2[0]) == textlib::strtolower($this->config->user_attribute);
+                            $found = textlib::strtolower($memberparts[0]) == textlib::strtolower($this->config->user_attribute);
                             // No need to search LDAP in that case.
                             if ($found && empty($this->config->no_speedup_ldap)) {
                                 // In Moodle usernames are always converted to lowercase
                                 // see auto creating or synching users in auth/ldap/auth.php.
-                                $ret[] = textlib::strtolower($membre_tmp2[1]);
+                                $ret[] = textlib::strtolower($memberparts[1]);
                             } else {
                                 // Fetch Moodle username from LDAP or process nested group.
                                 if ($this->config->memberattribute_isdn) {
                                     // Rev 1.2 nested groups.
-                                    if ($this->config->process_nested_groups && ($group_cn = $this->is_ldap_group($membre))) {
+                                    if ($this->config->process_nested_groups && ($groupcn = $this->is_ldap_group($memberstring))) {
                                         // In case of funny directory where groups are member of groups.
-                                        if (array_key_exists($membre, $this->anti_recursion_array)) {
-                                            unset($this->anti_recursion_array[$membre]);
+                                        if (array_key_exists($memberstring, $this->antirecursionarray)) {
+                                            unset($this->antirecursionarray[$memberstring]);
                                             continue;
                                         }
-                                        $this->anti_recursion_array[$membre] = 1;
-                                        $tmp = $this->ldap_get_group_members_rfc($group_cn);
-                                        unset($this->anti_recursion_array[$membre]);
+                                        $this->antirecursionarray[$memberstring] = 1;
+                                        $tmp = $this->ldap_get_group_members_rfc($groupcn);
+                                        unset($this->antirecursionarray[$memberstring]);
                                         $ret = array_merge($ret, $tmp);
                                     } else {
-                                        if ($cpt = $this->get_username_byattr($membre_tmp2[0], $membre_tmp2[1])) {
+                                        if ($cpt = $this->get_username_byattr($memberparts[0], $memberparts[1])) {
                                             $ret[] = $cpt;
                                         }
                                     }
                                 } // Else nothing to add.
                             }
                         } else {
-                            $ret[] = textlib::strtolower($membre);
+                            $ret[] = textlib::strtolower($memberstring);
                         }
                     }
                 }
@@ -316,22 +316,22 @@ class local_ldap extends auth_plugin_ldap {
 
                     for ($g = 0; $g < (count($groupe[0][$attribut]) - 1); $g++) {
 
-                        $membre = trim($groupe[0][$attribut][$g]);
-                        if ($membre != "") {
+                        $memberstring = trim($groupe[0][$attribut][$g]);
+                        if ($memberstring != "") {
                             // In AD, group object's member values are always full DNs.
-                            if ($this->config->process_nested_groups && ($group_cn = $this->is_ldap_group($membre))) {
+                            if ($this->config->process_nested_groups && ($groupcn = $this->is_ldap_group($memberstring))) {
                                 // Recursive call in case of funny directory where groups are member of groups.
-                                if (array_key_exists($membre, $this->anti_recursion_array)) {
-                                    unset($this->anti_recursion_array[$membre]);
+                                if (array_key_exists($memberstring, $this->antirecursionarray)) {
+                                    unset($this->antirecursionarray[$memberstring]);
                                     continue;
                                 }
 
-                                $this->anti_recursion_array[$membre] = 1;
-                                $tmp = $this->ldap_get_group_members_ad($group_cn);
-                                unset($this->anti_recursion_array[$membre]);
-                                $ret = array_merge($ret,$tmp);
+                                $this->antirecursionarray[$memberstring] = 1;
+                                $tmp = $this->ldap_get_group_members_ad($groupcn);
+                                unset($this->antirecursionarray[$memberstring]);
+                                $ret = array_merge($ret, $tmp);
                             } else {
-                                if ($cpt = $this->get_username_bydn($membre)) {
+                                if ($cpt = $this->get_username_bydn($memberstring)) {
                                     $ret[] = $cpt;
                                 }
                             }
@@ -386,13 +386,13 @@ class local_ldap extends auth_plugin_ldap {
 
         $filter = '(&('.$this->config->user_attribute.'=*)'.$this->config->objectclass.')';
         $ldapconnection = $this->ldap_connect();
-        $ldap_result = ldap_read($ldapconnection, $dn, $filter, array($this->config->user_attribute));
+        $ldapresult = ldap_read($ldapconnection, $dn, $filter, array($this->config->user_attribute));
 
-        if (!$ldap_result) {
+        if (!$ldapresult) {
             return false;
         }
 
-        $user = ldap_get_entries_moodle($ldapconnection, $ldap_result);
+        $user = ldap_get_entries_moodle($ldapconnection, $ldapresult);
 
         if (empty($user)) {
             return false;
@@ -416,11 +416,11 @@ class local_ldap extends auth_plugin_ldap {
         if (empty($this->config->process_nested_groups)) {
             return false; // Not supported by config.
         }
-        return !empty($this->groups_dn_cache[$dn]) ? $this->groups_dn_cache[$dn] : false;
+        return !empty($this->groupdnscache[$dn]) ? $this->groupdnscache[$dn] : false;
     }
 
     /**
-     * rev 1012 traitement de l'execption avec active directory pour des groupes >1000 membres
+     * rev 1012 traitement de l'execption avec active directory pour des groupes >1000 members
      * voir http://forums.sun.com/thread.jspa?threadID=578347
      *
      * @return string[] an array of username indexed by Moodle's userid
@@ -480,23 +480,23 @@ class local_ldap extends auth_plugin_ldap {
 
             if ($this->config->search_sub) {
                 // Use ldap_search to find first user from subtree.
-                $ldap_result = ldap_search($ldapconnection, $context,
+                $ldapresult = ldap_search($ldapconnection, $context,
                                            $filter,
                                            array($this->config->cohort_synching_ldap_attribute_attribute));
             } else {
                 // Search only in this context.
-                $ldap_result = ldap_list($ldapconnection, $context,
+                $ldapresult = ldap_list($ldapconnection, $context,
                                          $filter,
                                          array($this->config->cohort_synching_ldap_attribute_attribute));
             }
 
-            if (!$ldap_result) {
+            if (!$ldapresult) {
                 continue;
             }
 
             // This API function returns all attributes as an array
             // whether they are single or multiple.
-            $users = ldap_get_entries_moodle($ldapconnection, $ldap_result);
+            $users = ldap_get_entries_moodle($ldapconnection, $ldapresult);
 
             // Add found DISTINCT values to list.
             for ($i = 0; $i < count($users); $i++) {
