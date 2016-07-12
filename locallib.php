@@ -34,7 +34,7 @@ require_once($CFG->dirroot . '/auth/ldap/auth.php');
  * CAS authentication plugin.
  * extended to fetch LDAP groups and to be cohort aware
  */
-class auth_plugin_cohort extends auth_plugin_ldap {
+class local_ldap extends auth_plugin_ldap {
 
     /** @var array Avoid infinite loop with nested groups in 'funny' directories. */
     var $anti_recursion_array;
