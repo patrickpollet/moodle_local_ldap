@@ -572,7 +572,7 @@ class local_ldap extends auth_plugin_ldap {
     public function sync_cohorts_by_group() {
         global $DB;
 
-        $ldapgroups = $this->get_ldap_grouplist();
+        $ldapgroups = $this->ldap_get_grouplist();
         foreach ($ldapgroups as $group => $groupname) {
             if (!$cohort = $DB->get_record('cohort', array('idnumber' => $groupname), '*')) {
                 if (empty($plugin->config->cohort_synching_ldap_groups_autocreate_cohorts)) {
