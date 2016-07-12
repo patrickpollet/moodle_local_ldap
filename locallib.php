@@ -176,8 +176,7 @@ class local_ldap extends auth_plugin_ldap {
         $ret = array ();
         $ldapconnection = $this->ldap_connect();
 
-        $textlib = textlib_get_instance();
-        $group = $textlib->convert($group, 'utf-8', $this->config->ldapencoding);
+        $group = core_text::convert($group, 'utf-8', $this->config->ldapencoding);
 
         if (!$ldapconnection) {
             return $ret;
@@ -220,12 +219,12 @@ class local_ldap extends auth_plugin_ldap {
 
                             // Caution in Moodle LDAP attributes names are converted to lowercase
                             // see process_config in auth/ldap/auth.php.
-                            $found = textlib::strtolower($memberparts[0]) == textlib::strtolower($this->config->user_attribute);
+                            $found = core_text::strtolower($memberparts[0]) == core_text::strtolower($this->config->user_attribute);
                             // No need to search LDAP in that case.
                             if ($found && empty($this->config->no_speedup_ldap)) {
                                 // In Moodle usernames are always converted to lowercase
                                 // see auto creating or synching users in auth/ldap/auth.php.
-                                $ret[] = textlib::strtolower($memberparts[1]);
+                                $ret[] = core_text::strtolower($memberparts[1]);
                             } else {
                                 // Fetch Moodle username from LDAP or process nested group.
                                 if ($this->config->memberattribute_isdn) {
@@ -248,7 +247,7 @@ class local_ldap extends auth_plugin_ldap {
                                 } // Else nothing to add.
                             }
                         } else {
-                            $ret[] = textlib::strtolower($memberstring);
+                            $ret[] = core_text::strtolower($memberstring);
                         }
                     }
                 }
@@ -272,8 +271,7 @@ class local_ldap extends auth_plugin_ldap {
             return $ret;
         }
 
-        $textlib = textlib_get_instance();
-        $group = $textlib->convert($group, 'utf-8', $this->config->ldapencoding);
+        $group = core_text::convert($group, 'utf-8', $this->config->ldapencoding);
 
         $queryg = "(&({$this->config->group_attribute}=" . trim($group) . ")(objectClass={$this->config->group_class}))";
 
@@ -373,7 +371,7 @@ class local_ldap extends auth_plugin_ldap {
 
         // In Moodle usernames are always converted to lowercase
         // see auto creating or synching users in auth/ldap/auth.php.
-        return textlib::strtolower($matchings[0]);
+        return core_text::strtolower($matchings[0]);
     }
 
     /**
@@ -398,11 +396,11 @@ class local_ldap extends auth_plugin_ldap {
             return false;
         }
 
-        $matching = textlib::convert($user[0][$this->config->user_attribute][0], $this->config->ldapencoding, 'utf-8');
+        $matching = core_text::convert($user[0][$this->config->user_attribute][0], $this->config->ldapencoding, 'utf-8');
 
         // In Moodle usernames are always converted to lowercase
         // see auto creating or synching users in auth/ldap/auth.php.
-        return textlib::strtolower($matching);
+        return core_text::strtolower($matching);
     }
 
 
@@ -502,7 +500,7 @@ class local_ldap extends auth_plugin_ldap {
             for ($i = 0; $i < count($users); $i++) {
                 $count = $users[$i][$this->config->cohort_synching_ldap_attribute_attribute]['count'];
                 for ($j = 0; $j < $count; $j++) {
-                    $value = textlib::convert($users[$i][$this->config->cohort_synching_ldap_attribute_attribute][$j],
+                    $value = core_text::convert($users[$i][$this->config->cohort_synching_ldap_attribute_attribute][$j],
                                 $this->config->ldapencoding, 'utf-8');
                     if (!in_array ($value, $matchings)) {
                         array_push($matchings, $value);
