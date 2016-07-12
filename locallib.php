@@ -566,7 +566,47 @@ class local_ldap extends auth_plugin_ldap {
     }
 
     public function sync_cohorts_by_attribute() {
+        $cohortnames = $this->get_attribute_distinct_values();
+        foreach ($cohortnames as $n => $cohortname) {
+            // Not that we search for cohort IDNUMBER and not name for a match
+            // thus it we do not autocreate cohorts, admin MUST create cohorts beforehand
+            // and set their IDNUMBER to the exact value of the corresponding attribute in LDAP.
+            if (!$cohort = $DB->get_record('cohort', array('idnumber' => $cohortname), '*')) {
+                if (empty($plugin->config->cohort_synching_ldap_attribute_autocreate_cohorts)) {
+                    // The cohort does not exist and auto-creation of cohorts is disabled.
+                    continue;
+                }
 
+                $ldapmembers = $this->get_users_having_attribute_value($cohortname);
+                if (count($ldapmembers) == 0) {
+                    // Do not create an empty cohort.
+                    continue;
+                }
+
+                $cohort = new stdClass();
+                $cohort->name = $cohort->idnumber = $cohortname;
+                $cohort->contextid = context_system::instance()->id;
+                $cohort->description = get_string('cohort_synchronized_with_attribute', 'local_ldap',
+                    $this->config->cohort_synching_ldap_attribute_attribute);
+                $cohortid = cohort_add_cohort($cohort);
+            } else {
+                $cohortid = $cohort->id;
+                $ldapmembers = $this->get_users_having_attribute_value($cohortname);
+            }
+
+            $cohortmembers = $this->get_cohort_members($cohortid);
+            foreach ($cohortmembers as $userid => $user) {
+                if (!isset ($ldapmembers[$userid])) {
+                    cohort_remove_member($cohortid, $userid);
+                }
+            }
+
+            foreach ($ldapmembers as $userid => $username) {
+                if (cohort_is_member($cohortid, $userid)) {
+                    cohort_add_member($cohortid, $userid);
+                }
+            }
+        }
     }
 
     public function sync_cohorts_by_group() {
