@@ -26,12 +26,6 @@ defined('MOODLE_INTERNAL') || die;
 if ($hassiteconfig) {
     $settings = new admin_settingpage('local_ldap', get_string('pluginname', 'local_ldap'));
 
-    $name = 'debug_ldap_groupes';
-    $title = get_string($name, 'local_ldap');
-    $description = get_string($name.'_desc', 'local_ldap');
-    $setting = new admin_setting_configcheckbox('local_ldap/'.$name, $title, $description, false);
-    $settings->add($setting);
-
     $settings->add(new admin_setting_heading('synccohortgroup',
                     get_string('synccohortgroup', 'local_ldap'),
                     get_string('synccohortgroup_info', 'local_ldap')));

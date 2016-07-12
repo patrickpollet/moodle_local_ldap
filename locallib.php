@@ -67,15 +67,11 @@ class local_ldap extends auth_plugin_ldap {
 
         // Get my specific settings.
         $extra = get_config('local_ldap');
-        $this->merge_config($extra, 'debug_ldap_groupes', false);
-
         $this->merge_config($extra, 'group_attribute', 'cn');
         $this->merge_config($extra, 'group_class', 'groupOfUniqueNames');
         $this->merge_config($extra, 'process_nested_groups', 0);
-
         $this->merge_config($extra, 'cohort_synching_ldap_attribute_attribute', 'eduPersonAffiliation');
-        $this->merge_config($extra, 'cohort_synching_ldap_attribute_idnumbers','');
-
+        $this->merge_config($extra, 'cohort_synching_ldap_attribute_idnumbers', '');
         $this->merge_config($extra, 'cohort_synching_ldap_groups_autocreate_cohorts', false);
         $this->merge_config($extra, 'cohort_synching_ldap_attribute_autocreate_cohorts', false);
 

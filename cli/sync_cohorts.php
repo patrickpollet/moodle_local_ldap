@@ -57,7 +57,6 @@
  * group_class='groupofuniquenames'; // in case your groups are of class group ...
  * real_user_attribute='uid';     // in case your user_attribute is in mixed case in LDAP (sAMAccountName)
  * process_nested_groups=0;       // turn on nested groups
- * debug_ldap_groupes=false;           // turn on extensive debug upon running
  * cohort_synching_ldap_groups_autocreate_cohorts // if false will not create missing cohorts (admin must create them before)
  */
 
