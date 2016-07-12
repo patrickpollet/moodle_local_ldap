@@ -47,7 +47,6 @@ class local_ldap extends auth_plugin_ldap {
      */
 
     public function __construct() {
-        global $CFG;
         // Revision March 2013 needed to fetch the proper LDAP parameters
         // host, context ... from table config_plugins see comments in https://tracker.moodle.org/browse/MDL-25011.
         if (is_enabled_auth('cas')) {
@@ -68,7 +67,7 @@ class local_ldap extends auth_plugin_ldap {
         // Get my specific settings.
         $extra = get_config('local_ldap');
         $this->merge_config($extra, 'group_attribute', 'cn');
-        $this->merge_config($extra, 'group_class', 'groupOfUniqueNames');
+        $this->merge_config($extra, 'group_class', 'groupOfNames');
         $this->merge_config($extra, 'process_nested_groups', 0);
         $this->merge_config($extra, 'cohort_synching_ldap_attribute_attribute', 'eduPersonAffiliation');
         $this->merge_config($extra, 'cohort_synching_ldap_attribute_idnumbers', '');
@@ -114,7 +113,7 @@ class local_ldap extends auth_plugin_ldap {
      * @return string[]
      */
     public function ldap_get_grouplist($filter = "*") {
-        global $CFG, $DB;
+        global $CFG;
 
         $ldapconnection = $this->ldap_connect();
 
@@ -353,7 +352,6 @@ class local_ldap extends auth_plugin_ldap {
      * @return string or false
      */
     private function get_username_byattr($attr, $value) {
-        global $CFG;
         // Build a filter; note than nested groups will be removed here, so they are NOT supported.
         $filter = '(&('.$this->config->user_attribute.'=*)'.$this->config->objectclass.')';
         $filter = '(&'.$filter.'('.$attr.'='.$value.'))';
@@ -380,8 +378,6 @@ class local_ldap extends auth_plugin_ldap {
      * @return string or false
      */
     private function get_username_bydn($dn) {
-        global $CFG;
-
         $filter = '(&('.$this->config->user_attribute.'=*)'.$this->config->objectclass.')';
         $ldapconnection = $this->ldap_connect();
         $ldapresult = ldap_read($ldapconnection, $dn, $filter, array($this->config->user_attribute));
@@ -424,7 +420,6 @@ class local_ldap extends auth_plugin_ldap {
      * @return string[] an array of username indexed by Moodle's userid
      */
     public function ldap_get_group_members($groupe) {
-        global $DB;
         if ($this->config->user_type == "ad") {
             $members = $this->ldap_get_group_members_ad($groupe);
         } else {
@@ -451,8 +446,6 @@ class local_ldap extends auth_plugin_ldap {
      * @returns array of string
      */
     public function get_attribute_distinct_values() {
-        global $CFG, $DB;
-
         // Only these cohorts will be synched.
         if (!empty($this->config->cohort_synching_ldap_attribute_idnumbers )) {
             return explode(',', $this->config->cohort_synching_ldap_attribute_idnumbers);
@@ -514,8 +507,6 @@ class local_ldap extends auth_plugin_ldap {
     }
 
     public function get_users_having_attribute_value ($attributevalue) {
-        global $CFG, $DB;
-
         // Build a filter.
         $filter = '(&('.$this->config->user_attribute.'=*)'.$this->config->objectclass.')';
         $filter = '(&'.$filter.'('.$this->config->cohort_synching_ldap_attribute_attribute.'='.ldap_addslashes($attributevalue).'))';
@@ -565,7 +556,7 @@ class local_ldap extends auth_plugin_ldap {
 
     public function sync_cohorts_by_attribute() {
         $cohortnames = $this->get_attribute_distinct_values();
-        foreach ($cohortnames as $n => $cohortname) {
+        foreach ($cohortnames as $cohortname) {
             // Not that we search for cohort IDNUMBER and not name for a match
             // thus it we do not autocreate cohorts, admin MUST create cohorts beforehand
             // and set their IDNUMBER to the exact value of the corresponding attribute in LDAP.
@@ -608,8 +599,6 @@ class local_ldap extends auth_plugin_ldap {
     }
 
     public function sync_cohorts_by_group() {
-        global $DB;
-
         $ldapgroups = $this->ldap_get_grouplist();
         foreach ($ldapgroups as $group => $groupname) {
             if (!$cohort = $DB->get_record('cohort', array('idnumber' => $groupname), '*')) {
