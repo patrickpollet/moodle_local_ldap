@@ -59,8 +59,7 @@ class local_ldap extends auth_plugin_ldap {
             $this->roleauth = 'auth_ldap';
             $this->errorlogtag = '[AUTH LDAP] ';
         } else {
-            error_log('[SYNCH COHORTS] ' . get_string('pluginnotenabled', 'auth_ldap'));
-            die;
+            return false;
         }
 
         // Fetch basic settings from LDAP or CAS auth plugin.
@@ -69,7 +68,6 @@ class local_ldap extends auth_plugin_ldap {
         // Get my specific settings.
         $extra = get_config('local_ldap');
         $this->merge_config($extra, 'debug_ldap_groupes', false);
-        $CFG->debug_ldap_groupes = $this->config->debug_ldap_groupes; // Make my life easier.
 
         $this->merge_config($extra, 'group_attribute', 'cn');
         $this->merge_config($extra, 'group_class', 'groupOfUniqueNames');
@@ -86,31 +84,18 @@ class local_ldap extends auth_plugin_ldap {
          // is in mixed case in the LDAP , such as sAMAccountName instead of samaccountname
          // If your cohorts are not populated by this script try setting this value.
         if (!empty($extra->real_user_attribute)) {
-            if ($CFG->debug_ldap_groupes) {
-                pp_print_object("using {$extra->real_user_attribute} as naming attribute instead of
-                    {$this->config->user_attribute}", '');
-            }
             $this->config->user_attribute = $extra->real_user_attribute;
         }
 
         // Override if needed the object class defined in Moodle's LDAP settings
         // useful to restrict this synching to a certain category of LDAP users such as students.
         if (! empty($extra->cohort_synching_ldap_attribute_objectclass)) {
-            if ($CFG->debug_ldap_groupes) {
-                pp_print_object("using {$extra->cohort_synching_ldap_attribute_objectclass} as object class instead of
-                    {$this->config->objectclass}", '');
-            }
             $this->config->objectclass = $extra->cohort_synching_ldap_attribute_objectclass;
         }
 
         // Cache for found groups dn; used for nested groups processing.
         $this->groups_dn_cache      = array();
         $this->anti_recursion_array = array();
-
-        if ($CFG->debug_ldap_groupes) {
-            pp_print_object('plugin config', $this->config);
-        }
-
     }
 
     /**
@@ -135,7 +120,6 @@ class local_ldap extends auth_plugin_ldap {
     public function ldap_get_grouplist($filter = "*") {
         global $CFG, $DB;
 
-        print_string('connectingldap', 'auth_ldap');
         $ldapconnection = $this->ldap_connect();
 
         $fresult = array ();
@@ -168,9 +152,6 @@ class local_ldap extends auth_plugin_ldap {
                 $ldap_result = ldap_list($ldapconnection, $context, $filter, array ($this->config->group_attribute));
             }
             $groups = ldap_get_entries($ldapconnection, $ldap_result);
-            if ($CFG->debug_ldap_groupes) {
-                pp_print_object("groups found in LDAP ctx $context : ", $groups);
-            }
 
             // Add found groups to list.
             for ($i = 0; $i < count($groups) - 1; $i++) {
@@ -201,21 +182,12 @@ class local_ldap extends auth_plugin_ldap {
 
         $textlib = textlib_get_instance();
         $group = $textlib->convert($group, 'utf-8', $this->config->ldapencoding);
-        //this line break the script with Moodle 2.1 2.2  under windows
-        //see http://tracker.moodle.org/browse/MDL-30859
-        //$group = textlib::convert($group, 'utf-8', $this->config->ldapencoding);
 
-        if ($CFG->debug_ldap_groupes) {
-            pp_print_object("connecting to ldap RFC: ", $ldapconnection);
-        }
         if (!$ldapconnection) {
             return $ret;
         }
 
         $queryg = "(&({$this->config->group_attribute}=" . trim($group) . ")(objectClass={$this->config->group_class}))";
-        if ($CFG->debug_ldap_groupes) {
-            pp_print_object("queryg: ", $queryg);
-        }
 
         if (!empty($CFG->cohort_synching_ldap_groups_contexts)) {
             $contexts = explode(';', $CFG->cohort_synching_ldap_groups_contexts);
@@ -237,30 +209,19 @@ class local_ldap extends auth_plugin_ldap {
 
             if (!empty ($resultg) AND ldap_count_entries($ldapconnection, $resultg)) {
                 $groupe = ldap_get_entries($ldapconnection, $resultg);
-                if ($CFG->debug_ldap_groupes) {
-                    pp_print_object("group : ", $groupe);
-                }
 
                 for ($g = 0; $g < (count($groupe[0][$this->config->memberattribute]) - 1); $g++) {
 
                     $membre = trim($groupe[0][$this->config->memberattribute][$g]);
                     if ($membre != "") {
-                        if ($CFG->debug_ldap_groupes) {
-                            pp_print_object("member : ", $membre);
-                        }
                         // Try to speed the search if the member value is
                         // either a simple username (thus must match the Moodle username)
                         // or xx=username with xx = the user attribute name matching Moodle's username
                         // such as uid=jdoe,ou=xxxx,ou=yyyyy.
                         $membre_tmp1 = explode(",", $membre);
                         if (count($membre_tmp1) > 1) {
-                            if ($CFG->debug_ldap_groupes) {
-                                pp_print_object("membre_tpl1: ", $membre_tmp1);
-                            }
                             $membre_tmp2 = explode("=", trim($membre_tmp1[0]));
-                            if ($CFG->debug_ldap_groupes) {
-                                pp_print_object("membre_tpl2: ", $membre_tmp2);
-                            }
+
                             // Caution in Moodle LDAP attributes names are converted to lowercase
                             // see process_config in auth/ldap/auth.php.
                             $found = textlib::strtolower($membre_tmp2[0]) == textlib::strtolower($this->config->user_attribute);
@@ -271,20 +232,11 @@ class local_ldap extends auth_plugin_ldap {
                                 $ret[] = textlib::strtolower($membre_tmp2[1]);
                             } else {
                                 // Fetch Moodle username from LDAP or process nested group.
-                                if ($CFG->debug_ldap_groupes) {
-                                    pp_print_object("naming attribute is not ", $this->config->user_attribute);
-                                }
                                 if ($this->config->memberattribute_isdn) {
                                     // Rev 1.2 nested groups.
                                     if ($this->config->process_nested_groups && ($group_cn = $this->is_ldap_group($membre))) {
-                                        if ($CFG->debug_ldap_groupes){
-                                            pp_print_object("processing nested group ", $membre);
-                                        }
                                         // In case of funny directory where groups are member of groups.
                                         if (array_key_exists($membre, $this->anti_recursion_array)) {
-                                            if ($CFG->debug_ldap_groupes) {
-                                                pp_print_object("infinite loop detected skipping", $membre);
-                                            }
                                             unset($this->anti_recursion_array[$membre]);
                                             continue;
                                         }
@@ -306,9 +258,6 @@ class local_ldap extends auth_plugin_ldap {
                 }
             }
         }
-        if ($CFG->debug_ldap_groupes) {
-            pp_print_object("return of get_group_members_rfc ", $ret);
-        }
         $this->ldap_close();
         return $ret;
     }
@@ -323,23 +272,14 @@ class local_ldap extends auth_plugin_ldap {
 
         $ret = array ();
         $ldapconnection = $this->ldap_connect();
-        if ($CFG->debug_ldap_groupes) {
-            pp_print_object("connecting to ldap AD: ", $ldapconnection);
-        }
         if (!$ldapconnection) {
             return $ret;
         }
 
         $textlib = textlib_get_instance();
         $group = $textlib->convert($group, 'utf-8', $this->config->ldapencoding);
-        //this line break the script with Moodle 2.1 2.2  under windows
-        //see http://tracker.moodle.org/browse/MDL-30859
-        //$group = textlib::convert($group, 'utf-8', $this->config->ldapencoding);
 
         $queryg = "(&({$this->config->group_attribute}=" . trim($group) . ")(objectClass={$this->config->group_class}))";
-        if ($CFG->debug_ldap_groupes) {
-            pp_print_object("queryg: ", $queryg);
-        }
 
         $size = 999;
 
@@ -371,9 +311,6 @@ class local_ldap extends auth_plugin_ldap {
 
                 if (!empty ($resultg) AND ldap_count_entries($ldapconnection, $resultg)) {
                     $groupe = ldap_get_entries($ldapconnection, $resultg);
-                    if ($CFG->debug_ldap_groupes) {
-                        pp_print_object("groupe: ", $groupe);
-                    }
 
                     // A la derniere passe, AD renvoie member;Range=numero-* !!! TODO: Translate.
                     if (empty ($groupe[0][$attribut])) {
@@ -385,19 +322,10 @@ class local_ldap extends auth_plugin_ldap {
 
                         $membre = trim($groupe[0][$attribut][$g]);
                         if ($membre != "") {
-                            if ($CFG->debug_ldap_groupes) {
-                                pp_print_object("membre : ", $membre);
-                            }
                             // In AD, group object's member values are always full DNs.
                             if ($this->config->process_nested_groups && ($group_cn = $this->is_ldap_group($membre))) {
-                                if ($CFG->debug_ldap_groupes) {
-                                    pp_print_object("processing nested group ", $membre);
-                                }
                                 // Recursive call in case of funny directory where groups are member of groups.
                                 if (array_key_exists($membre, $this->anti_recursion_array)) {
-                                    if ($CFG->debug_ldap_groupes) {
-                                        pp_print_object("infinite loop detected skipping", $membre);
-                                    }
                                     unset($this->anti_recursion_array[$membre]);
                                     continue;
                                 }
@@ -420,9 +348,6 @@ class local_ldap extends auth_plugin_ldap {
                 $end = $end + $size;
             }
         }
-        if ($CFG->debug_ldap_groupes) {
-            pp_print_object("return get_group_members_ad ", $ret);
-        }
         $this->ldap_close();
         return $ret;
     }
@@ -438,27 +363,18 @@ class local_ldap extends auth_plugin_ldap {
         // Build a filter; note than nested groups will be removed here, so they are NOT supported.
         $filter = '(&('.$this->config->user_attribute.'=*)'.$this->config->objectclass.')';
         $filter = '(&'.$filter.'('.$attr.'='.$value.'))';
-        if ($CFG->debug_ldap_groupes) {
-            pp_print_object('looking for ', $filter);
-        }
+
         // Call Moodle ldap_get_userlist that return it as an array with Moodle user attributes names.
         $matchings = $this->ldap_get_userlist($filter);
+
         // Return the FIRST entry found.
         if (empty($matchings)) {
-            if ($CFG->debug_ldap_groupes) {
-                pp_print_object('not found', '');
-            }
             return false;
         }
         if (count($matchings) > 1) {
-            if ($CFG->debug_ldap_groupes) {
-                pp_print_object('error more than one found for ', count($matchings));
-            }
             return false;
         }
-        if ($CFG->debug_ldap_groupes) {
-            pp_print_object('found ', $matchings);
-        }
+
         // In Moodle usernames are always converted to lowercase
         // see auto creating or synching users in auth/ldap/auth.php.
         return textlib::strtolower($matchings[0]);
@@ -477,26 +393,16 @@ class local_ldap extends auth_plugin_ldap {
         $ldap_result = ldap_read($ldapconnection, $dn, $filter, array($this->config->user_attribute));
 
         if (!$ldap_result) {
-            if ($CFG->debug_ldap_groupes) {
-                pp_print_object('not found', '');
-            }
             return false;
         }
 
         $user = ldap_get_entries_moodle($ldapconnection, $ldap_result);
 
         if (empty($user)) {
-            if ($CFG->debug_ldap_groupes) {
-                pp_print_object('not found', '');
-            }
             return false;
         }
 
         $matching = textlib::convert($user[0][$this->config->user_attribute][0], $this->config->ldapencoding, 'utf-8');
-
-        if ($CFG->debug_ldap_groupes) {
-            pp_print_object('found ', $matching);
-        }
 
         // In Moodle usernames are always converted to lowercase
         // see auto creating or synching users in auth/ldap/auth.php.
@@ -561,9 +467,6 @@ class local_ldap extends auth_plugin_ldap {
         // Build a filter to fetch all users having something in the target LDAP attribute.
         $filter = '(&('.$this->config->user_attribute.'=*)'.$this->config->objectclass.')';
         $filter = '(&'.$filter.'('.$this->config->cohort_synching_ldap_attribute_attribute.'=*))';
-        if ($CFG->debug_ldap_groupes) {
-            pp_print_object('looking for ', $filter);
-        }
 
         $ldapconnection = $this->ldap_connect();
 
@@ -618,24 +521,17 @@ class local_ldap extends auth_plugin_ldap {
 
     public function get_users_having_attribute_value ($attributevalue) {
         global $CFG, $DB;
-        // Build a filter.
 
+        // Build a filter.
         $filter = '(&('.$this->config->user_attribute.'=*)'.$this->config->objectclass.')';
         $filter = '(&'.$filter.'('.$this->config->cohort_synching_ldap_attribute_attribute.'='.ldap_addslashes($attributevalue).'))';
-        if ($CFG->debug_ldap_groupes) {
-            pp_print_object('looking for ', $filter);
-        }
+
         // Call Moodle ldap_get_userlist that return it as an array with Moodle user attributes names.
         $matchings = $this->ldap_get_userlist($filter);
+
         // Return the FIRST entry found.
         if (empty($matchings)) {
-            if ($CFG->debug_ldap_groupes) {
-                pp_print_object('not found', '');
-            }
             return array();
-        }
-        if ($CFG->debug_ldap_groupes) {
-             pp_print_object('found ', count($matchings). ' matching users in LDAP');
         }
 
         $ret = array ();
@@ -648,9 +544,7 @@ class local_ldap extends auth_plugin_ldap {
                 $ret[$user->id] = $user->username;
             }
         }
-        if ($CFG->debug_ldap_groupes) {
-                pp_print_object('found ', count($ret). ' matching users known to Moodle');
-        }
+
         return $ret;
     }
 
@@ -721,20 +615,5 @@ class local_ldap extends auth_plugin_ldap {
                 }
             }
         }
-    }
-}
-
-/**
- *
- * verbose debugging function
- * @param unknown_type $title
- * @param unknown_type $obj
- */
-function pp_print_object($title, $obj) {
-    print $title;
-    if (is_object($obj) || is_array($obj)) {
-        print_r($obj);
-    } else {
-        print($obj .PHP_EOL);
     }
 }
