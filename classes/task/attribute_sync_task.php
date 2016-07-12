@@ -22,18 +22,6 @@
 
 namespace local_ldap\task;
 
-class group_sync_task extends \core\task\scheduled_task {
-    public function get_name() {
-         return get_string('groupsynctask', 'local_ldap');
-    }
-
-    public function execute() {
-        if ($plugin = new \local_ldap()) {
-            $plugin->sync_cohorts_by_group();
-        }
-    }
-}
-
 class attribute_sync_task extends \core\task\scheduled_task {
     public function get_name() {
          return get_string('attributesynctask', 'local_ldap');
