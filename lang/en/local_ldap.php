@@ -48,3 +48,5 @@ $string['cohort_synching_ldap_attribute_objectclass'] = 'User class';
 $string['cohort_synching_ldap_attribute_objectclass_desc'] = 'if set override default value inherited from LDAP or CAS auth plugin (respect case)';
 $string['cohort_synching_ldap_attribute_autocreate_cohorts'] = 'Autocreate missing cohorts';
 $string['cohort_synching_ldap_attribute_autocreate_cohorts_desc'] = 'if false will not create missing cohorts (admin must create them before) ';
+$string['attributesynctask'] = 'Synchronize cohorts from LDAP attributes';
+$string['groupsynctask'] = 'Synchronize cohorts from LDAP groups';
