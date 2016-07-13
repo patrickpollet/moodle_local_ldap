@@ -229,6 +229,8 @@ class local_ldap_grup_sync_testcase extends auth_ldap_plugin_testcase {
         ldap_add($connection, 'ou='.$o['ou'].','.$topdn, $o);
         for ($i = 1; $i <= 5; $i++) {
             $this->create_ldap_user($connection, $topdn, $i);
+            ldap_mod_add($connection, "cn=username$i,ou=users,$topdn",
+                array('objectClass' => 'eduPerson'));
         }
 
         // Set some attributes.
