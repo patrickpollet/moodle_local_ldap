@@ -506,7 +506,9 @@ class local_ldap extends auth_plugin_ldap {
         return $matchings;
     }
 
-    public function get_users_having_attribute_value ($attributevalue) {
+    public function get_users_having_attribute_value($attributevalue) {
+        global $DB;
+
         // Build a filter.
         $filter = '(&('.$this->config->user_attribute.'=*)'.$this->config->objectclass.')';
         $filter = '(&'.$filter.'('.$this->config->cohort_synching_ldap_attribute_attribute.'='.ldap_addslashes($attributevalue).'))';
@@ -555,6 +557,8 @@ class local_ldap extends auth_plugin_ldap {
     }
 
     public function sync_cohorts_by_attribute() {
+        global $DB;
+
         $cohortnames = $this->get_attribute_distinct_values();
         foreach ($cohortnames as $cohortname) {
             // Not that we search for cohort IDNUMBER and not name for a match
@@ -599,6 +603,8 @@ class local_ldap extends auth_plugin_ldap {
     }
 
     public function sync_cohorts_by_group() {
+        global $DB;
+
         $ldapgroups = $this->ldap_get_grouplist();
         foreach ($ldapgroups as $group => $groupname) {
             if (!$cohort = $DB->get_record('cohort', array('idnumber' => $groupname), '*')) {
