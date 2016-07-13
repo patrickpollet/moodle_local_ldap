@@ -22,6 +22,8 @@
 
 namespace local_ldap\task;
 
+require_once($CFG->dirroot.'/local/ldap/locallib.php');
+
 class attribute_sync_task extends \core\task\scheduled_task {
     public function get_name() {
          return get_string('attributesynctask', 'local_ldap');

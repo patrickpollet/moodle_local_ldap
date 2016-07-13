@@ -219,6 +219,7 @@ class local_ldap extends auth_plugin_ldap {
                             // Caution in Moodle LDAP attributes names are converted to lowercase
                             // see process_config in auth/ldap/auth.php.
                             $found = core_text::strtolower($memberparts[0]) == core_text::strtolower($this->config->user_attribute);
+
                             // No need to search LDAP in that case.
                             if ($found && empty($this->config->no_speedup_ldap)) {
                                 // In Moodle usernames are always converted to lowercase
@@ -427,7 +428,7 @@ class local_ldap extends auth_plugin_ldap {
         } else {
             $members = $this->ldap_get_group_members_rfc($groupe);
         }
-        $ret = array ();
+        $ret = array();
         // Remove all LDAP users unknown to Moodle.
         foreach ($members as $member) {
             $params = array (
@@ -603,6 +604,7 @@ class local_ldap extends auth_plugin_ldap {
                 }
             }
         }
+        return true;
     }
 
     public function sync_cohorts_by_group() {
@@ -647,5 +649,6 @@ class local_ldap extends auth_plugin_ldap {
                 }
             }
         }
+        return true;
     }
 }
