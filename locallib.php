@@ -567,7 +567,7 @@ class local_ldap extends auth_plugin_ldap {
             // thus it we do not autocreate cohorts, admin MUST create cohorts beforehand
             // and set their IDNUMBER to the exact value of the corresponding attribute in LDAP.
             if (!$cohort = $DB->get_record('cohort', array('idnumber' => $cohortname), '*')) {
-                if (empty($plugin->config->cohort_synching_ldap_attribute_autocreate_cohorts)) {
+                if (empty($this->config->cohort_synching_ldap_attribute_autocreate_cohorts)) {
                     // The cohort does not exist and auto-creation of cohorts is disabled.
                     continue;
                 }
@@ -608,9 +608,9 @@ class local_ldap extends auth_plugin_ldap {
         global $DB;
 
         $ldapgroups = $this->ldap_get_grouplist();
-        foreach ($ldapgroups as $group => $groupname) {
+        foreach ($ldapgroups as $groupname) {
             if (!$cohort = $DB->get_record('cohort', array('idnumber' => $groupname), '*')) {
-                if (empty($plugin->config->cohort_synching_ldap_groups_autocreate_cohorts)) {
+                if (empty($this->config->cohort_synching_ldap_groups_autocreate_cohorts)) {
                     // The cohort does not exist and auto-creation of cohorts is disabled.
                     continue;
                 }
