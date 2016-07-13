@@ -18,6 +18,8 @@ php:
  - 7.0
 
 env:
+ global:
+  - IGNORE_NAMES=sync_test.php
  matrix:
   - DB=pgsql MOODLE_BRANCH=MOODLE_30_STABLE
   - DB=pgsql MOODLE_BRANCH=MOODLE_31_STABLE
