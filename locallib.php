@@ -420,6 +420,8 @@ class local_ldap extends auth_plugin_ldap {
      * @return string[] an array of username indexed by Moodle's userid
      */
     public function ldap_get_group_members($groupe) {
+        global $DB;
+
         if ($this->config->user_type == "ad") {
             $members = $this->ldap_get_group_members_ad($groupe);
         } else {
