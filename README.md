@@ -1,63 +1,30 @@
-moodle_local_ldap
-=================
+LDAP synching scripts
+=====================
 
-Various synchronization scripts between Moodle cohorts and LDAP directories (see https://tracker.moodle.org/browse/MDL-25011 
-and https://tracker.moodle.org/browse/MDL-25054 )
+[![Build Status](https://api.travis-ci.org/mackensen/moodle_local_ldap.png)](https://api.travis-ci.org/mackensen/moodle_local_ldap)
 
+This plugin synchronizes Moodle cohorts against an LDAP directory using either group memberships or attribute values. This is a continuation of Patrick Pollet's [local_ldap](https://github.com/patrickpollet/moodle_local_ldap) plugin, which in turn was inspired by [MDL-25011](https://tracker.moodle.org/browse/MDL-25011) and [MDL-25054](https://tracker.moodle.org/browse/MDL-25054).
 
-Better documentation in progress in the wiki https://github.com/patrickpollet/moodle_local_ldap/wiki
+Requirements
+------------
+- Moodle 3.0 (build 2015111600 or later)
 
-installation via git 
---------------------
+Various synchronization scripts between Moodle cohorts and LDAP directories (see  
+and  )
 
-  cd /var/www/moodle
-  
-  git clone https://github.com/patrickpollet/moodle_local_ldap.git local/ldap
-  
-  echo 'local/ldap' >> .git/info/exclude
-  
-  
-installation via zip 
---------------------
- 
-  collect a zip file from this github repository
-  
-  cd /var/www/moodle/local
-  
-  md ldap
-  
-  unzip the zip file in the ldap directory
-  
-   
-   
-In both case you should have the following structure in local/ldap directory
+Installation
+------------
+Copy the ldap folder into your /local directory and visit your Admin Notification page to complete the installation. You must have either the CAS or LDAP authentication method enabled.
 
-* ldap/
-* ├── cli
-* │   ├── sync_cohorts_attribute.php
-* │   ├── sync_cohorts.php
-* │   ├── sync_moodle_cohorts_2.sh
-* │   └── sync_moodle_cohorts.sh
-* ├── db
-* ├── gitinit.txt
-* ├── lang
-* │   ├── en
-* │   │   └── local_ldap.php
-* │   └── fr
-* │       └── local_ldap.php
-* ├── locallib.php
-* ├── README.md
-* ├── settings.php
-* └── version.php
+Configuration
+-------------
+Depending on your environment the plugin may work with default options. Configuration settings include the group class (`groupOfNames` by default) and whether to automatically import all found LDAP groups as cohorts. By default this setting is disabled.
 
- 
-Now just visit Site Administration , Notifications to install it. You should get notifications about new settings.
-Visit the Wiki page https://github.com/patrickpollet/moodle_local_ldap/wiki for help on parameters. 
-
-
-usage 
+Usage
 -----
+Previous versions of this plugin used a CLI script. This is deprecated in favor of two [Scheduled tasks](https://docs.moodle.org/31/en/Scheduled_tasks), one for syncing by group and another for syncing by attribute. Both are configured to run hourly and are disabled by default.
 
-see sample sh scripts in ldap/cli   
-
-
+Author
+-----
+- Charles Fulton (fultonc@lafayette.edu)
+- Patrick Pollet
