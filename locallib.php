@@ -513,7 +513,8 @@ class local_ldap extends auth_plugin_ldap {
 
         // Build a filter.
         $filter = '(&('.$this->config->user_attribute.'=*)'.$this->config->objectclass.')';
-        $filter = '(&'.$filter.'('.$this->config->cohort_synching_ldap_attribute_attribute.'='.ldap_addslashes($attributevalue).'))';
+        $filter = '(&'.$filter.'('.$this->config->cohort_synching_ldap_attribute_attribute.
+            '='.ldap_addslashes($attributevalue).'))';
 
         // Call Moodle ldap_get_userlist that return it as an array with Moodle user attributes names.
         $matchings = $this->ldap_get_userlist($filter);
@@ -591,13 +592,13 @@ class local_ldap extends auth_plugin_ldap {
 
             $cohortmembers = $this->get_cohort_members($cohortid);
             foreach ($cohortmembers as $userid => $user) {
-                if (!isset ($ldapmembers[$userid])) {
+                if (!isset($ldapmembers[$userid])) {
                     cohort_remove_member($cohortid, $userid);
                 }
             }
 
             foreach ($ldapmembers as $userid => $username) {
-                if (cohort_is_member($cohortid, $userid)) {
+                if (!cohort_is_member($cohortid, $userid)) {
                     cohort_add_member($cohortid, $userid);
                 }
             }

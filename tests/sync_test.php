@@ -27,7 +27,7 @@ global $CFG;
 require_once($CFG->dirroot.'/local/ldap/locallib.php');
 require_once($CFG->dirroot.'/auth/ldap/tests/plugin_test.php');
 
-class local_ldap_grup_sync_testcase extends auth_ldap_plugin_testcase {
+class local_ldap_sync_testcase extends auth_ldap_plugin_testcase {
     public function test_cohort_group_sync() {
         global $CFG, $DB;
 
@@ -328,7 +328,7 @@ class local_ldap_grup_sync_testcase extends auth_ldap_plugin_testcase {
         $this->assertEquals(3, $members);
 
         // Remove a user from a group in LDAP and ensure he's deleted.
-        ldap_mod_add($connection, "cn=username3,ou=users,$topdn",
+        ldap_mod_del($connection, "cn=username3,ou=users,$topdn",
             array('eduPersonAffiliation' => 'staff'));
         $members = $DB->count_records('cohort_members', array('cohortid' => $staffid));
         $this->assertEquals(3, $members);
