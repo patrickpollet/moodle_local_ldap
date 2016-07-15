@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * local_ldap version information.
+ * local_ldap language strings.
  *
  * @package   local_ldap
  * @copyright 2013 Patrick Pollet

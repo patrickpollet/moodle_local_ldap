@@ -17,10 +17,8 @@
 /**
  * Code for handling synching Moodle's cohorts with LDAP
  *
- * @package local
- * @subpackage ldap
- * @copyright 1999 onwards Martin Dougiamas and others {@link http://moodle.com}
- * @copyright 2013 onwards Patrick Pollet {@link mailto:pp@patrickpollet.net
+ * @package local_ldap
+ * @copyright 2013 onwards Patrick Pollet
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -31,8 +29,7 @@ require_once($CFG->dirroot . '/cohort/lib.php');
 require_once($CFG->dirroot . '/auth/ldap/auth.php');
 
 /**
- * CAS authentication plugin.
- * extended to fetch LDAP groups and to be cohort aware
+ * LDAP cohort sychronization.
  */
 class local_ldap extends auth_plugin_ldap {
 
