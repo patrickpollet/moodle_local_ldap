@@ -488,12 +488,13 @@ class local_ldap extends auth_plugin_ldap {
             // This API function returns all attributes as an array
             // whether they are single or multiple.
             $users = ldap_get_entries_moodle($ldapconnection, $ldapresult);
+            $attributekey = strtolower($this->config->cohort_synching_ldap_attribute_attribute); // MDL-57558.
 
             // Add found DISTINCT values to list.
             for ($i = 0; $i < count($users); $i++) {
-                $count = $users[$i][$this->config->cohort_synching_ldap_attribute_attribute]['count'];
+                $count = $users[$i][$attributekey]['count'];
                 for ($j = 0; $j < $count; $j++) {
-                    $value = core_text::convert($users[$i][$this->config->cohort_synching_ldap_attribute_attribute][$j],
+                    $value = core_text::convert($users[$i][$attributekey][$j],
                                 $this->config->ldapencoding, 'utf-8');
                     if (!in_array ($value, $matchings)) {
                         array_push($matchings, $value);
