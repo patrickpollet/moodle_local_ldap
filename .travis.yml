@@ -15,13 +15,14 @@ cache:
 php:
  - 5.6
  - 7.0
+ - 7.1
 
 env:
  global:
   - IGNORE_NAMES=sync_test.php
  matrix:
-  - DB=pgsql MOODLE_BRANCH=master
-  - DB=mysqli MOODLE_BRANCH=master
+  - DB=pgsql MOODLE_BRANCH=MOODLE_33_STABLE
+  - DB=mysqli MOODLE_BRANCH=MOODLE_33_STABLE
 
 before_install:
   - phpenv config-rm xdebug.ini
