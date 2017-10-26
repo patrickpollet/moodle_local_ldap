@@ -22,6 +22,8 @@
 
 namespace local_ldap\task;
 
+defined('MOODLE_INTERNAL') || die();
+
 require_once($CFG->dirroot.'/local/ldap/locallib.php');
 
 class group_sync_task extends \core\task\scheduled_task {
