@@ -54,7 +54,6 @@ install:
   - moodle-plugin-ci add-config 'define("TEST_AUTH_LDAP_DOMAIN", "dc=example,dc=com");'
 
 before_script:
-  - echo "extension=ldap.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
   - mkdir /tmp/slapd
   - slapd -f moodle/local/ldap/tests/fixtures/slapd.conf -h ldap://localhost:3389 &
   - sleep 3
