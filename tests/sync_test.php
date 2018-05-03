@@ -79,7 +79,7 @@ class local_ldap_sync_testcase extends auth_ldap_plugin_testcase {
         $o['objectClass'] = array('organizationalUnit');
         $o['ou']          = 'groups';
         ldap_add($connection, 'ou='.$o['ou'].','.$topdn, $o);
-        $departments = array('english', 'history');
+        $departments = array('english', 'history', 'english(bis)');
         foreach ($departments as $department) {
             $o = array();
             $o['objectClass'] = array('groupOfNames');
@@ -144,13 +144,20 @@ class local_ldap_sync_testcase extends auth_ldap_plugin_testcase {
         $cohort->name = "English Department";
         $cohort->idnumber = 'english';
         $englishid = cohort_add_cohort($cohort);
+        $cohort = new stdClass();
+        $cohort->contextid = context_system::instance()->id;
+        $cohort->name = "English Department (bis)";
+        $cohort->idnumber = 'english(bis)';
+        $englishbisid = cohort_add_cohort($cohort);
 
-        // Both cohorts should have three members.
+        // All three cohorts should have three members.
         $plugin = new local_ldap();
         $plugin->sync_cohorts_by_group();
         $members = $DB->count_records('cohort_members', array('cohortid' => $historyid));
         $this->assertEquals(3, $members);
         $members = $DB->count_records('cohort_members', array('cohortid' => $englishid));
+        $this->assertEquals(3, $members);
+        $members = $DB->count_records('cohort_members', array('cohortid' => $englishbisid));
         $this->assertEquals(3, $members);
 
         // Remove a user and then ensure he's re-added.
@@ -243,7 +250,7 @@ class local_ldap_sync_testcase extends auth_ldap_plugin_testcase {
         ldap_mod_add($connection, "cn=username4,ou=users,$topdn",
             array('eduPersonAffiliation' => 'staff'));
         ldap_mod_add($connection, "cn=username5,ou=users,$topdn",
-            array('eduPersonAffiliation' => 'staff'));
+            array('eduPersonAffiliation' => 'staff(pt)'));
 
         // Configure the authentication plugin a bit.
         set_config('host_url', TEST_AUTH_LDAP_HOST_URL, 'auth_ldap');
@@ -300,23 +307,30 @@ class local_ldap_sync_testcase extends auth_ldap_plugin_testcase {
         $cohort->name = "All staff";
         $cohort->idnumber = 'staff';
         $staffid = cohort_add_cohort($cohort);
+        $cohort = new stdClass();
+        $cohort->contextid = context_system::instance()->id;
+        $cohort->name = "All staff (pt)";
+        $cohort->idnumber = 'staff(pt)';
+        $staffptid = cohort_add_cohort($cohort);
 
-        // Faculty should have two members and staff should have three.
+        // Faculty and staff should have two members and staff(pt) should have one.
         $plugin = new local_ldap();
         $plugin->sync_cohorts_by_attribute();
         $members = $DB->count_records('cohort_members', array('cohortid' => $facultyid));
         $this->assertEquals(2, $members);
         $members = $DB->count_records('cohort_members', array('cohortid' => $staffid));
-        $this->assertEquals(3, $members);
+        $this->assertEquals(2, $members);
+        $members = $DB->count_records('cohort_members', array('cohortid' => $staffptid));
+        $this->assertEquals(1, $members);
 
         // Remove a user and then ensure he's re-added.
         $members = $plugin->get_cohort_members($staffid);
         cohort_remove_member($staffid, current($members)->id);
         $members = $DB->count_records('cohort_members', array('cohortid' => $staffid));
-        $this->assertEquals(2, $members);
+        $this->assertEquals(1, $members);
         $plugin->sync_cohorts_by_attribute();
         $members = $DB->count_records('cohort_members', array('cohortid' => $staffid));
-        $this->assertEquals(3, $members);
+        $this->assertEquals(2, $members);
 
         // Add an affiliation in LDAP and ensure he'd added.
         ldap_mod_add($connection, "cn=username3,ou=users,$topdn",
@@ -331,10 +345,10 @@ class local_ldap_sync_testcase extends auth_ldap_plugin_testcase {
         ldap_mod_del($connection, "cn=username3,ou=users,$topdn",
             array('eduPersonAffiliation' => 'staff'));
         $members = $DB->count_records('cohort_members', array('cohortid' => $staffid));
-        $this->assertEquals(3, $members);
+        $this->assertEquals(2, $members);
         $plugin->sync_cohorts_by_attribute();
         $members = $DB->count_records('cohort_members', array('cohortid' => $staffid));
-        $this->assertEquals(2, $members);
+        $this->assertEquals(1, $members);
 
         // Cleanup.
         $this->recursive_delete($connection, TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest');

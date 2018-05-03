@@ -178,7 +178,7 @@ class local_ldap extends auth_plugin_ldap {
             return $ret;
         }
 
-        $queryg = "(&({$this->config->group_attribute}=" . trim($group) . ")(objectClass={$this->config->group_class}))";
+        $queryg = "(&({$this->config->group_attribute}=" . ldap_filter_addslashes(trim($group)) . ")(objectClass={$this->config->group_class}))";
 
         if (!empty($CFG->cohort_synching_ldap_groups_contexts)) {
             $contexts = explode(';', $CFG->cohort_synching_ldap_groups_contexts);
@@ -270,7 +270,7 @@ class local_ldap extends auth_plugin_ldap {
 
         $group = core_text::convert($group, 'utf-8', $this->config->ldapencoding);
 
-        $queryg = "(&({$this->config->group_attribute}=" . trim($group) . ")(objectClass={$this->config->group_class}))";
+        $queryg = "(&({$this->config->group_attribute}=" . ldap_filter_addslashes(trim($group)) . ")(objectClass={$this->config->group_class}))";
 
         $size = 999;
 
@@ -513,7 +513,7 @@ class local_ldap extends auth_plugin_ldap {
         // Build a filter.
         $filter = '(&('.$this->config->user_attribute.'=*)'.$this->config->objectclass.')';
         $filter = '(&'.$filter.'('.$this->config->cohort_synching_ldap_attribute_attribute.
-            '='.ldap_addslashes($attributevalue).'))';
+            '='.ldap_filter_addslashes($attributevalue).'))';
 
         // Call Moodle ldap_get_userlist that return it as an array with Moodle user attributes names.
         $matchings = $this->ldap_get_userlist($filter);
