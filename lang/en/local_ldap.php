@@ -41,6 +41,7 @@ $string['group_class_desc'] = 'Set if your groups are of another class such as g
 $string['group_class'] = 'Group class';
 $string['groupsynctask'] = 'Synchronize cohorts from LDAP groups';
 $string['pluginname'] = 'LDAP syncing scripts';
+$string['privacy:metadata'] = 'The LDAP syncing scripts do not store any data.';
 $string['process_nested_groups_desc'] = 'If selected, LDAP groups included in groups will be processed';
 $string['process_nested_groups'] = 'Process nested groups';
 $string['real_user_attribute_desc'] = 'Use if your user_attribute is in mixed case in LDAP (sAMAccountName), but not in Moodle\'s CAS/LDAP settings';
