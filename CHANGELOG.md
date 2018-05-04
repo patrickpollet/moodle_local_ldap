@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.4.0 - 2018-05-04
+
+- Updated for GDPR compliance
+- Fixed bug where parentheses were not filtered correctly (thanks to [@cperves](https://github.com/cperves) for the report)
+
 ## 3.3.0 - 2017-08-09
 
 - Changed version numbering to match stable version

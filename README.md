@@ -7,9 +7,8 @@ This plugin synchronizes Moodle cohorts against an LDAP directory using either g
 
 Requirements
 ------------
-- Moodle 3.3.1 (build 2017051501 or later)
-
-Various synchronization scripts between Moodle cohorts and LDAP directories.
+- Moodle 3.4.0 (build 2017111300 or later)
+- OpenLDAP or Active Directory
 
 Installation
 ------------
@@ -21,7 +20,7 @@ Depending on your environment the plugin may work with default options. Configur
 
 Usage
 -----
-Previous versions of this plugin used a CLI script. This is deprecated in favor of two [Scheduled tasks](https://docs.moodle.org/31/en/Scheduled_tasks), one for syncing by group and another for syncing by attribute. Both are configured to run hourly and are disabled by default.
+Previous versions of this plugin used a CLI script. This is deprecated in favor of two [scheduled tasks](https://docs.moodle.org/31/en/Scheduled_tasks), one for syncing by group and another for syncing by attribute. Both are configured to run hourly and are disabled by default.
 
 Author
 -----
