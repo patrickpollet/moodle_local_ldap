@@ -441,10 +441,10 @@ class local_ldap extends auth_plugin_ldap {
 
 
     /**
-     *
      * Returns the distinct values of the target LDAP attribute
-     * these will be the idnumbers of the synched Moodle cohorts
-     * @returns array of string
+     * these will be the idnumbers of the synced Moodle cohorts.
+     *
+     * @return array
      */
     public function get_attribute_distinct_values() {
         // Only these cohorts will be synched.
@@ -464,44 +464,57 @@ class local_ldap extends auth_plugin_ldap {
         }
         $matchings = array();
 
+        $ldappagedresults = ldap_paged_results_supported($this->config->ldap_version, $ldapconnection);
+        $ldapcookie = '';
+
         foreach ($contexts as $context) {
             $context = trim($context);
             if (empty($context)) {
                 continue;
             }
 
-            if ($this->config->search_sub) {
-                // Use ldap_search to find first user from subtree.
-                $ldapresult = ldap_search($ldapconnection, $context,
-                                           $filter,
-                                           array($this->config->cohort_synching_ldap_attribute_attribute));
-            } else {
-                // Search only in this context.
-                $ldapresult = ldap_list($ldapconnection, $context,
-                                         $filter,
-                                         array($this->config->cohort_synching_ldap_attribute_attribute));
-            }
+            do {
+                if ($ldappagedresults) {
+                    ldap_control_paged_result($ldapconnection, $this->config->pagesize, true, $ldapcookie);
+                }
+                if ($this->config->search_sub) {
+                    // Use ldap_search to find first user from subtree.
+                    $ldapresult = ldap_search($ldapconnection, $context,
+                                               $filter,
+                                               array($this->config->cohort_synching_ldap_attribute_attribute));
+                } else {
+                    // Search only in this context.
+                    $ldapresult = ldap_list($ldapconnection, $context,
+                                             $filter,
+                                             array($this->config->cohort_synching_ldap_attribute_attribute));
+                }
 
-            if (!$ldapresult) {
-                continue;
-            }
+                if (!$ldapresult) {
+                    continue;
+                }
 
-            // This API function returns all attributes as an array
-            // whether they are single or multiple.
-            $users = ldap_get_entries_moodle($ldapconnection, $ldapresult);
-            $attributekey = strtolower($this->config->cohort_synching_ldap_attribute_attribute); // MDL-57558.
+                if ($ldappagedresults) {
+                    ldap_control_paged_result_response($ldapconnection, $ldapresult, $ldapcookie);
+                }
 
-            // Add found DISTINCT values to list.
-            for ($i = 0; $i < count($users); $i++) {
-                $count = $users[$i][$attributekey]['count'];
-                for ($j = 0; $j < $count; $j++) {
-                    $value = core_text::convert($users[$i][$attributekey][$j],
-                                $this->config->ldapencoding, 'utf-8');
-                    if (!in_array ($value, $matchings)) {
-                        array_push($matchings, $value);
+                // This API function returns all attributes as an array
+                // whether they are single or multiple.
+                $users = ldap_get_entries_moodle($ldapconnection, $ldapresult);
+                $attributekey = strtolower($this->config->cohort_synching_ldap_attribute_attribute); // MDL-57558.
+
+                // Add found DISTINCT values to list.
+                for ($i = 0; $i < count($users); $i++) {
+                    $count = $users[$i][$attributekey]['count'];
+                    for ($j = 0; $j < $count; $j++) {
+                        $value = core_text::convert($users[$i][$attributekey][$j],
+                                    $this->config->ldapencoding, 'utf-8');
+                        if (!in_array ($value, $matchings)) {
+                            array_push($matchings, $value);
+                        }
                     }
                 }
-            }
+            } while ($ldappagedresults && $ldapcookie !== null && $ldapcookie != '');
+
         }
 
         $this->ldap_close();

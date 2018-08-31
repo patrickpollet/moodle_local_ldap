@@ -354,4 +354,49 @@ class local_ldap_sync_testcase extends auth_ldap_plugin_testcase {
         $this->recursive_delete($connection, TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest');
         ldap_close($connection);
     }
+
+    // Overriding the auth_ldap function to add pagination.
+    protected function recursive_delete($connection, $dn, $filter) {
+        if ($res = ldap_list($connection, $dn, $filter, array('dn'))) {
+            $info = ldap_get_entries($connection, $res);
+            ldap_free_result($res);
+            if ($info['count'] > 0) {
+                $ldapcookie = '';
+                do {
+                    ldap_control_paged_result($connection, 250, true, $ldapcookie);
+                    $res = ldap_search($connection, "$filter,$dn", 'cn=*', array('dn'));
+                    if (!$res) {
+                        continue;
+                    }
+                    $info = ldap_get_entries($connection, $res);
+                    foreach ($info as $i) {
+                        if (isset($i['dn'])) {
+                            ldap_delete($connection, $i['dn']);
+                        }
+                    }
+                    ldap_control_paged_result_response($connection, $res, $ldapcookie);
+                } while ($ldapcookie !== null && $ldapcookie != '');
+                ldap_free_result($res);
+
+                $ldapcookie = '';
+                do {
+                    ldap_control_paged_result($connection, 250, true, $ldapcookie);
+                    $res = ldap_search($connection, "$filter,$dn", 'ou=*', array('dn'));
+                    if (!$res) {
+                        continue;
+                    }
+                    $info = ldap_get_entries($connection, $res);
+                    foreach ($info as $i) {
+                        if (isset($i['dn']) and $info[0]['dn'] != $i['dn']) {
+                            ldap_delete($connection, $i['dn']);
+                        }
+                    }
+                    ldap_control_paged_result_response($connection, $res, $ldapcookie);
+                } while ($ldapcookie !== null && $ldapcookie != '');
+                ldap_free_result($res);
+
+                ldap_delete($connection, "$filter,$dn");
+            }
+        }
+    }
 }
