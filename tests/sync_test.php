@@ -27,7 +27,8 @@ global $CFG;
 require_once($CFG->dirroot.'/local/ldap/locallib.php');
 require_once($CFG->dirroot.'/auth/ldap/tests/plugin_test.php');
 
-class local_ldap_sync_testcase extends auth_ldap_plugin_testcase {
+class local_ldap_sync_testcase extends advanced_testcase {
+
     public function test_cohort_group_sync() {
         global $CFG, $DB;
 
@@ -56,7 +57,8 @@ class local_ldap_sync_testcase extends auth_ldap_plugin_testcase {
 
         // Create new empty test container.
         $topdn = 'dc=moodletest,'.TEST_AUTH_LDAP_DOMAIN;
-        $this->recursive_delete($connection, TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest');
+        $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest');
+
         $o = array();
         $o['objectClass'] = array('dcObject', 'organizationalUnit');
         $o['dc']         = 'moodletest';
@@ -188,8 +190,7 @@ class local_ldap_sync_testcase extends auth_ldap_plugin_testcase {
         $this->assertEquals(2, $members);
 
         // Cleanup.
-        $this->recursive_delete($connection, TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest');
-        ldap_close($connection);
+        $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest');
     }
 
     public function test_cohort_attribute_sync() {
@@ -220,7 +221,8 @@ class local_ldap_sync_testcase extends auth_ldap_plugin_testcase {
 
         // Create new empty test container.
         $topdn = 'dc=moodletest,'.TEST_AUTH_LDAP_DOMAIN;
-        $this->recursive_delete($connection, TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest');
+        $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest');
+
         $o = array();
         $o['objectClass'] = array('dcObject', 'organizationalUnit');
         $o['dc']         = 'moodletest';
@@ -351,52 +353,128 @@ class local_ldap_sync_testcase extends auth_ldap_plugin_testcase {
         $this->assertEquals(1, $members);
 
         // Cleanup.
-        $this->recursive_delete($connection, TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest');
-        ldap_close($connection);
+        $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest');
     }
 
-    // Overriding the auth_ldap function to add pagination.
-    protected function recursive_delete($connection, $dn, $filter) {
-        if ($res = ldap_list($connection, $dn, $filter, array('dn'))) {
-            $info = ldap_get_entries($connection, $res);
-            ldap_free_result($res);
+    // Create an ldap user. From auth_ldap.
+    protected function create_ldap_user($connection, $topdn, $i) {
+        $o = array();
+        $o['objectClass']   = array('inetOrgPerson', 'organizationalPerson', 'person', 'posixAccount');
+        $o['cn']            = 'username'.$i;
+        $o['sn']            = 'Lastname'.$i;
+        $o['givenName']     = 'Firstname'.$i;
+        $o['uid']           = $o['cn'];
+        $o['uidnumber']     = 2000 + $i;
+        $o['gidNumber']     = 1000 + $i;
+        $o['homeDirectory'] = '/';
+        $o['mail']          = 'user'.$i.'@example.com';
+        $o['userPassword']  = 'pass'.$i;
+        ldap_add($connection, 'cn='.$o['cn'].',ou=users,'.$topdn, $o);
+    }
+
+    // Delete a user from ldap. From auth_ldap.
+    protected function delete_ldap_user($connection, $topdn, $i) {
+        ldap_delete($connection, 'cn=username'.$i.',ou=users,'.$topdn);
+    }
+
+    // Activate the ldap authentication plugin. From auth_ldap.
+    protected function enable_plugin() {
+        $auths = get_enabled_auth_plugins(true);
+        if (!in_array('ldap', $auths)) {
+            $auths[] = 'ldap';
+
+        }
+        set_config('auth', implode(',', $auths));
+    }
+
+    /**
+     * Clear out the test environment. We create a separate connection in case
+     * pagination is required.
+     *
+     * @param string $dn The top level distinguished name
+     * @param string $filter LDAP filter.
+     */
+    protected function recursive_delete($dn, $filter) {
+        $ldapconnection = ldap_connect_moodle(TEST_AUTH_LDAP_HOST_URL, 3, 'rfc2307', TEST_AUTH_LDAP_BIND_DN,
+            TEST_AUTH_LDAP_BIND_PW, LDAP_DEREF_NEVER, $debuginfo, false);
+
+        if ($res = ldap_list($ldapconnection, $dn, $filter, array('dn'))) {
+            $info = ldap_get_entries($ldapconnection, $res);
+
             if ($info['count'] > 0) {
+                $ldappagedresults = ldap_paged_results_supported(3, $ldapconnection);
                 $ldapcookie = '';
+                $todelete = array();
                 do {
-                    ldap_control_paged_result($connection, 250, true, $ldapcookie);
-                    $res = ldap_search($connection, "$filter,$dn", 'cn=*', array('dn'));
+                    if ($ldappagedresults) {
+                        ldap_control_paged_result($ldapconnection, 250, true, $ldapcookie);
+                    }
+                    $res = ldap_search($ldapconnection, "$filter,$dn", 'cn=*', array('dn'));
                     if (!$res) {
                         continue;
                     }
-                    $info = ldap_get_entries($connection, $res);
+                    $info = ldap_get_entries($ldapconnection, $res);
                     foreach ($info as $i) {
                         if (isset($i['dn'])) {
-                            ldap_delete($connection, $i['dn']);
+                            $todelete[] = $i['dn'];
                         }
                     }
-                    ldap_control_paged_result_response($connection, $res, $ldapcookie);
-                } while ($ldapcookie !== null && $ldapcookie != '');
-                ldap_free_result($res);
+                    if ($ldappagedresults) {
+                        ldap_control_paged_result_response($ldapconnection, $res, $ldapcookie);
+                    }
+                    ldap_free_result($res);
+                } while ($ldappagedresults && $ldapcookie !== null && $ldapcookie != '');
 
-                $ldapcookie = '';
+                if ($ldappagedresults) {
+                    ldap_close($ldapconnection);
+                    unset($ldapconnection);
+                    $ldapconnection = ldap_connect_moodle(TEST_AUTH_LDAP_HOST_URL, 3, 'rfc2307', TEST_AUTH_LDAP_BIND_DN,
+                        TEST_AUTH_LDAP_BIND_PW, LDAP_DEREF_NEVER, $debuginfo, false);
+                }
+                if (is_array($todelete)) {
+                    foreach ($todelete as $delete) {
+                        ldap_delete($ldapconnection, $delete);
+                    }
+                }
+                $todelete = array();
+
                 do {
-                    ldap_control_paged_result($connection, 250, true, $ldapcookie);
-                    $res = ldap_search($connection, "$filter,$dn", 'ou=*', array('dn'));
+                    if ($ldappagedresults) {
+                        ldap_control_paged_result($ldapconnection, 250, true, $ldapcookie);
+                    }
+                    $res = ldap_search($ldapconnection, "$filter,$dn", 'ou=*', array('dn'));
                     if (!$res) {
                         continue;
                     }
-                    $info = ldap_get_entries($connection, $res);
+                    $info = ldap_get_entries($ldapconnection, $res);
                     foreach ($info as $i) {
                         if (isset($i['dn']) and $info[0]['dn'] != $i['dn']) {
-                            ldap_delete($connection, $i['dn']);
+                            $todelete[] = $i['dn'];
                         }
                     }
-                    ldap_control_paged_result_response($connection, $res, $ldapcookie);
-                } while ($ldapcookie !== null && $ldapcookie != '');
-                ldap_free_result($res);
+                    if ($ldappagedresults) {
+                        ldap_control_paged_result_response($ldapconnection, $res, $ldapcookie);
+                    }
+                    ldap_free_result($res);
+                } while ($ldappagedresults && $ldapcookie !== null && $ldapcookie != '');
 
-                ldap_delete($connection, "$filter,$dn");
+                if ($ldappagedresults) {
+                    ldap_close($ldapconnection);
+                    unset($ldapconnection);
+                    $ldapconnection = ldap_connect_moodle(TEST_AUTH_LDAP_HOST_URL, 3, 'rfc2307', TEST_AUTH_LDAP_BIND_DN,
+                        TEST_AUTH_LDAP_BIND_PW, LDAP_DEREF_NEVER, $debuginfo, false);
+                }
+
+                if (is_array($todelete)) {
+                    foreach ($todelete as $delete) {
+                        ldap_delete($ldapconnection, $delete);
+                    }
+                }
+
+                ldap_delete($ldapconnection, "$filter,$dn");
             }
         }
+        ldap_close($ldapconnection);
+        unset($ldapconnection);
     }
 }
