@@ -27,6 +27,11 @@ global $CFG;
 require_once($CFG->dirroot.'/local/ldap/locallib.php');
 require_once($CFG->dirroot.'/auth/ldap/tests/plugin_test.php');
 
+// Detect server type; we assume rfc2307.
+if (!defined('TEST_AUTH_LDAP_USER_TYPE')) {
+    define('TEST_AUTH_LDAP_USER_TYPE', 'rfc2307');
+}
+
 class local_ldap_sync_testcase extends advanced_testcase {
 
     public function test_cohort_group_sync() {
@@ -47,20 +52,17 @@ class local_ldap_sync_testcase extends advanced_testcase {
         }
 
         // Make sure we can connect the server.
-        $usertype = 'rfc2307';
-        $connection = $this->connect_to_ldap($usertype);
+        $connection = $this->connect_to_ldap();
 
         $this->enable_plugin();
 
         // Create new empty test container.
-        $topdn = 'dc=moodletest,'.TEST_AUTH_LDAP_DOMAIN;
-        $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest', $usertype);
+        $testcontainer = $this->get_test_container();
+        $topdn = $testcontainer . ',' . TEST_AUTH_LDAP_DOMAIN;
+        $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, $testcontainer);
 
-        $o = array();
-        $o['objectClass'] = array('dcObject', 'organizationalUnit');
-        $o['dc']         = 'moodletest';
-        $o['ou']         = 'MOODLETEST';
-        if (!ldap_add($connection, 'dc=moodletest,'.TEST_AUTH_LDAP_DOMAIN, $o)) {
+        $o = $this->get_test_ou();
+        if (!ldap_add($connection, $topdn, $o)) {
             $this->markTestSkipped('Can not create test LDAP container.');
         }
 
@@ -96,7 +98,7 @@ class local_ldap_sync_testcase extends advanced_testcase {
         set_config('pagesize', '2', 'auth_ldap');
         set_config('bind_dn', TEST_AUTH_LDAP_BIND_DN, 'auth_ldap');
         set_config('bind_pw', TEST_AUTH_LDAP_BIND_PW, 'auth_ldap');
-        set_config('user_type', 'rfc2307', 'auth_ldap');
+        set_config('user_type', TEST_AUTH_LDAP_USER_TYPE, 'auth_ldap');
         set_config('contexts', 'ou=users,'.$topdn.';ou=groups,'.$topdn, 'auth_ldap');
         set_config('search_sub', 0, 'auth_ldap');
         set_config('opt_deref', LDAP_DEREF_NEVER, 'auth_ldap');
@@ -187,7 +189,7 @@ class local_ldap_sync_testcase extends advanced_testcase {
         $this->assertEquals(2, $members);
 
         // Cleanup.
-        $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest', $usertype);
+        $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, $testcontainer);
     }
 
     public function test_cohort_attribute_sync() {
@@ -207,20 +209,17 @@ class local_ldap_sync_testcase extends advanced_testcase {
             $this->markTestSkipped('External LDAP test server not configured.');
         }
 
-        $usertype = 'rfc2307';
-        $connection = $this->connect_to_ldap($usertype);
+        $connection = $this->connect_to_ldap();
 
         $this->enable_plugin();
 
         // Create new empty test container.
-        $topdn = 'dc=moodletest,'.TEST_AUTH_LDAP_DOMAIN;
-        $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest', $usertype);
+        $testcontainer = $this->get_test_container();
+        $topdn = $testcontainer . ',' . TEST_AUTH_LDAP_DOMAIN;
+        $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, $testcontainer);
 
-        $o = array();
-        $o['objectClass'] = array('dcObject', 'organizationalUnit');
-        $o['dc']         = 'moodletest';
-        $o['ou']         = 'MOODLETEST';
-        if (!ldap_add($connection, 'dc=moodletest,'.TEST_AUTH_LDAP_DOMAIN, $o)) {
+        $o = $this->get_test_ou();
+        if (!ldap_add($connection, $topdn, $o)) {
             $this->markTestSkipped('Can not create test LDAP container.');
         }
 
@@ -255,7 +254,7 @@ class local_ldap_sync_testcase extends advanced_testcase {
         set_config('pagesize', '2', 'auth_ldap');
         set_config('bind_dn', TEST_AUTH_LDAP_BIND_DN, 'auth_ldap');
         set_config('bind_pw', TEST_AUTH_LDAP_BIND_PW, 'auth_ldap');
-        set_config('user_type', 'rfc2307', 'auth_ldap');
+        set_config('user_type', TEST_AUTH_LDAP_USER_TYPE, 'auth_ldap');
         set_config('contexts', 'ou=users,'.$topdn, 'auth_ldap');
         set_config('search_sub', 0, 'auth_ldap');
         set_config('opt_deref', LDAP_DEREF_NEVER, 'auth_ldap');
@@ -346,7 +345,34 @@ class local_ldap_sync_testcase extends advanced_testcase {
         $this->assertEquals(1, $members);
 
         // Cleanup.
-        $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest', $usertype);
+        $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, $testcontainer);
+    }
+
+    protected function get_test_container() {
+        switch(TEST_AUTH_LDAP_USER_TYPE) {
+            case 'rfc2307':
+                return 'dc=moodletest';
+                break;
+            case 'ad':
+                return 'ou=Moodletest';
+                break;
+        }
+    }
+
+    protected function get_test_ou() {
+        $o = array();
+        switch(TEST_AUTH_LDAP_USER_TYPE) {
+            case 'rfc2307':
+                $o['objectClass'] = array('dcObject', 'organizationalUnit');
+                $o['dc'] = 'moodletest';
+                $o['ou'] = 'MOODLETEST';
+                break;
+            case 'ad':
+                $o['objectClass'] = array('organizationalUnit');
+                $o['ou'] = 'Moodletest';
+                break;
+        }
+        return $o;
     }
 
     // Create an ldap user. From auth_ldap.
@@ -383,13 +409,11 @@ class local_ldap_sync_testcase extends advanced_testcase {
     /**
      * Connect to the LDAP server.
      *
-     * @param $usertype The configured user type for this connection.
-     *
      * @return resource
      */
-    protected function connect_to_ldap($usertype) {
+    protected function connect_to_ldap() {
         $debuginfo = '';
-        if (!$connection = ldap_connect_moodle(TEST_AUTH_LDAP_HOST_URL, 3, $usertype, TEST_AUTH_LDAP_BIND_DN,
+        if (!$connection = ldap_connect_moodle(TEST_AUTH_LDAP_HOST_URL, 3, TEST_AUTH_LDAP_USER_TYPE, TEST_AUTH_LDAP_BIND_DN,
                 TEST_AUTH_LDAP_BIND_PW, LDAP_DEREF_NEVER, $debuginfo, false)) {
             $this->markTestSkipped('Can not connect to LDAP test server: '.$debuginfo);
             return false;
@@ -403,10 +427,9 @@ class local_ldap_sync_testcase extends advanced_testcase {
      *
      * @param string $dn The top level distinguished name
      * @param string $filter LDAP filter.
-     * @param string $usertype The configured user type for this connection.
      */
-    protected function recursive_delete($dn, $filter, $usertype) {
-        $ldapconnection = $this->connect_to_ldap($usertype);
+    protected function recursive_delete($dn, $filter) {
+        $ldapconnection = $this->connect_to_ldap();
 
         if ($res = ldap_list($ldapconnection, $dn, $filter, array('dn'))) {
             $info = ldap_get_entries($ldapconnection, $res);
@@ -438,7 +461,7 @@ class local_ldap_sync_testcase extends advanced_testcase {
                 if ($ldappagedresults) {
                     ldap_close($ldapconnection);
                     unset($ldapconnection);
-                    $ldapconnection = $this->connect_to_ldap($usertype);
+                    $ldapconnection = $this->connect_to_ldap();
                 }
                 if (is_array($todelete)) {
                     foreach ($todelete as $delete) {
@@ -470,7 +493,7 @@ class local_ldap_sync_testcase extends advanced_testcase {
                 if ($ldappagedresults) {
                     ldap_close($ldapconnection);
                     unset($ldapconnection);
-                    $ldapconnection = $this->connect_to_ldap($usertype);
+                    $ldapconnection = $this->connect_to_ldap();
                 }
 
                 if (is_array($todelete)) {
