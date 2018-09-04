@@ -47,17 +47,14 @@ class local_ldap_sync_testcase extends advanced_testcase {
         }
 
         // Make sure we can connect the server.
-        $debuginfo = '';
-        if (!$connection = ldap_connect_moodle(TEST_AUTH_LDAP_HOST_URL, 3, 'rfc2307', TEST_AUTH_LDAP_BIND_DN,
-                TEST_AUTH_LDAP_BIND_PW, LDAP_DEREF_NEVER, $debuginfo, false)) {
-            $this->markTestSkipped('Can not connect to LDAP test server: '.$debuginfo);
-        }
+        $usertype = 'rfc2307';
+        $connection = $this->connect_to_ldap($usertype);
 
         $this->enable_plugin();
 
         // Create new empty test container.
         $topdn = 'dc=moodletest,'.TEST_AUTH_LDAP_DOMAIN;
-        $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest');
+        $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest', $usertype);
 
         $o = array();
         $o['objectClass'] = array('dcObject', 'organizationalUnit');
@@ -190,7 +187,7 @@ class local_ldap_sync_testcase extends advanced_testcase {
         $this->assertEquals(2, $members);
 
         // Cleanup.
-        $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest');
+        $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest', $usertype);
     }
 
     public function test_cohort_attribute_sync() {
@@ -210,18 +207,14 @@ class local_ldap_sync_testcase extends advanced_testcase {
             $this->markTestSkipped('External LDAP test server not configured.');
         }
 
-        // Make sure we can connect the server.
-        $debuginfo = '';
-        if (!$connection = ldap_connect_moodle(TEST_AUTH_LDAP_HOST_URL, 3, 'rfc2307', TEST_AUTH_LDAP_BIND_DN,
-                TEST_AUTH_LDAP_BIND_PW, LDAP_DEREF_NEVER, $debuginfo, false)) {
-            $this->markTestSkipped('Can not connect to LDAP test server: '.$debuginfo);
-        }
+        $usertype = 'rfc2307';
+        $connection = $this->connect_to_ldap($usertype);
 
         $this->enable_plugin();
 
         // Create new empty test container.
         $topdn = 'dc=moodletest,'.TEST_AUTH_LDAP_DOMAIN;
-        $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest');
+        $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest', $usertype);
 
         $o = array();
         $o['objectClass'] = array('dcObject', 'organizationalUnit');
@@ -353,7 +346,7 @@ class local_ldap_sync_testcase extends advanced_testcase {
         $this->assertEquals(1, $members);
 
         // Cleanup.
-        $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest');
+        $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, 'dc=moodletest', $usertype);
     }
 
     // Create an ldap user. From auth_ldap.
@@ -388,15 +381,32 @@ class local_ldap_sync_testcase extends advanced_testcase {
     }
 
     /**
+     * Connect to the LDAP server.
+     *
+     * @param $usertype The configured user type for this connection.
+     *
+     * @return resource
+     */
+    protected function connect_to_ldap($usertype) {
+        $debuginfo = '';
+        if (!$connection = ldap_connect_moodle(TEST_AUTH_LDAP_HOST_URL, 3, $usertype, TEST_AUTH_LDAP_BIND_DN,
+                TEST_AUTH_LDAP_BIND_PW, LDAP_DEREF_NEVER, $debuginfo, false)) {
+            $this->markTestSkipped('Can not connect to LDAP test server: '.$debuginfo);
+            return false;
+        }
+        return $connection;
+    }
+
+    /**
      * Clear out the test environment. We create a separate connection in case
      * pagination is required.
      *
      * @param string $dn The top level distinguished name
      * @param string $filter LDAP filter.
+     * @param string $usertype The configured user type for this connection.
      */
-    protected function recursive_delete($dn, $filter) {
-        $ldapconnection = ldap_connect_moodle(TEST_AUTH_LDAP_HOST_URL, 3, 'rfc2307', TEST_AUTH_LDAP_BIND_DN,
-            TEST_AUTH_LDAP_BIND_PW, LDAP_DEREF_NEVER, $debuginfo, false);
+    protected function recursive_delete($dn, $filter, $usertype) {
+        $ldapconnection = $this->connect_to_ldap($usertype);
 
         if ($res = ldap_list($ldapconnection, $dn, $filter, array('dn'))) {
             $info = ldap_get_entries($ldapconnection, $res);
@@ -428,8 +438,7 @@ class local_ldap_sync_testcase extends advanced_testcase {
                 if ($ldappagedresults) {
                     ldap_close($ldapconnection);
                     unset($ldapconnection);
-                    $ldapconnection = ldap_connect_moodle(TEST_AUTH_LDAP_HOST_URL, 3, 'rfc2307', TEST_AUTH_LDAP_BIND_DN,
-                        TEST_AUTH_LDAP_BIND_PW, LDAP_DEREF_NEVER, $debuginfo, false);
+                    $ldapconnection = $this->connect_to_ldap($usertype);
                 }
                 if (is_array($todelete)) {
                     foreach ($todelete as $delete) {
@@ -461,8 +470,7 @@ class local_ldap_sync_testcase extends advanced_testcase {
                 if ($ldappagedresults) {
                     ldap_close($ldapconnection);
                     unset($ldapconnection);
-                    $ldapconnection = ldap_connect_moodle(TEST_AUTH_LDAP_HOST_URL, 3, 'rfc2307', TEST_AUTH_LDAP_BIND_DN,
-                        TEST_AUTH_LDAP_BIND_PW, LDAP_DEREF_NEVER, $debuginfo, false);
+                    $ldapconnection = $this->connect_to_ldap($usertype);
                 }
 
                 if (is_array($todelete)) {
