@@ -66,12 +66,12 @@ class local_ldap_sync_testcase extends advanced_testcase {
             $this->markTestSkipped('Can not create test LDAP container.');
         }
 
-        // Create a few users.
+        // Create 2000 users.
         $o = array();
         $o['objectClass'] = array('organizationalUnit');
         $o['ou']          = 'users';
         ldap_add($connection, 'ou='.$o['ou'].','.$topdn, $o);
-        for ($i = 1; $i <= 5; $i++) {
+        for ($i = 1; $i <= 2000; $i++) {
             $this->create_ldap_user($connection, $topdn, $i);
         }
 
@@ -89,6 +89,16 @@ class local_ldap_sync_testcase extends advanced_testcase {
                     'cn=username5,ou=users,'.$topdn);
             ldap_add($connection, 'cn='.$o['cn'].',ou=groups,'.$topdn, $o);
         }
+
+        // Create all employees group.
+        $o = array();
+        $o['objectClass'] = array('groupOfNames');
+        $o['cn']          = 'allemployees';
+        $o['member']      = array();
+        for ($i = 1; $i <= 2000; $i++) {
+            $o['member'][] = "cn=username{$i},ou=users,{$topdn}";
+        }
+        ldap_add($connection, 'cn='.$o['cn'].',ou=groups,'.$topdn, $o);
 
         // Configure the authentication plugin a bit.
         set_config('host_url', TEST_AUTH_LDAP_HOST_URL, 'auth_ldap');
@@ -131,8 +141,8 @@ class local_ldap_sync_testcase extends advanced_testcase {
         $sink->close();
         ob_end_clean();
 
-        // Check events, 5 users created.
-        $this->assertCount(5, $events);
+        // Check events, 2000 users created.
+        $this->assertCount(2000, $events);
 
         // Add the cohorts.
         $cohort = new stdClass();
@@ -169,6 +179,18 @@ class local_ldap_sync_testcase extends advanced_testcase {
         $plugin->sync_cohorts_by_group();
         $members = $DB->count_records('cohort_members', array('cohortid' => $englishid));
         $this->assertEquals(3, $members);
+
+        // Add the big cohort.
+        $cohort = new stdClass();
+        $cohort->contextid = context_system::instance()->id;
+        $cohort->name = "All employees";
+        $cohort->idnumber = 'allemployees';
+        $allemployeesid = cohort_add_cohort($cohort);
+
+        // The big cohort should have 2000 members.
+        $plugin->sync_cohorts_by_group();
+        $members = $DB->count_records('cohort_members', array('cohortid' => $allemployeesid));
+        $this->assertEquals(2000, $members);
 
         // Add a user to a group in LDAP and ensure he'd added.
         ldap_mod_add($connection, "cn=history,ou=groups,$topdn",
@@ -223,28 +245,34 @@ class local_ldap_sync_testcase extends advanced_testcase {
             $this->markTestSkipped('Can not create test LDAP container.');
         }
 
-        // Create a few users.
+        // Create 2000 users.
         $o = array();
         $o['objectClass'] = array('organizationalUnit');
         $o['ou']          = 'users';
         ldap_add($connection, 'ou='.$o['ou'].','.$topdn, $o);
-        for ($i = 1; $i <= 5; $i++) {
+        for ($i = 1; $i <= 2000; $i++) {
             $this->create_ldap_user($connection, $topdn, $i);
             ldap_mod_add($connection, "cn=username$i,ou=users,$topdn",
                 array('objectClass' => 'eduPerson'));
         }
 
-        // Set some attributes.
-        ldap_mod_add($connection, "cn=username1,ou=users,$topdn",
-            array('eduPersonAffiliation' => 'faculty'));
-        ldap_mod_add($connection, "cn=username2,ou=users,$topdn",
-            array('eduPersonAffiliation' => 'faculty'));
-        ldap_mod_add($connection, "cn=username3,ou=users,$topdn",
-            array('eduPersonAffiliation' => 'staff'));
-        ldap_mod_add($connection, "cn=username4,ou=users,$topdn",
-            array('eduPersonAffiliation' => 'staff'));
-        ldap_mod_add($connection, "cn=username5,ou=users,$topdn",
-            array('eduPersonAffiliation' => 'staff(pt)'));
+        // All users will be employees. Odd users will be faculty. Even will be staff.
+        // Some will be staff(pt).
+        for ($i = 1; $i <= 2000; $i++) {
+            ldap_mod_add($connection, "cn=username{$i},ou=users,$topdn",
+                array('eduPersonAffiliation' => 'employee'));
+            if ($i % 2 == 1) {
+                ldap_mod_add($connection, "cn=username{$i},ou=users,$topdn",
+                    array('eduPersonAffiliation' => 'faculty'));
+            } else {
+                ldap_mod_add($connection, "cn=username{$i},ou=users,$topdn",
+                    array('eduPersonAffiliation' => 'staff'));
+            }
+            if ($i % 50 == 0) {
+                ldap_mod_add($connection, "cn=username{$i},ou=users,$topdn",
+                    array('eduPersonAffiliation' => 'staff(pt)'));
+            }
+        }
 
         // Configure the authentication plugin a bit.
         set_config('host_url', TEST_AUTH_LDAP_HOST_URL, 'auth_ldap');
@@ -287,10 +315,15 @@ class local_ldap_sync_testcase extends advanced_testcase {
         $sink->close();
         ob_end_clean();
 
-        // Check events, 5 users created.
-        $this->assertCount(5, $events);
+        // Check events, 2000 users created.
+        $this->assertCount(2000, $events);
 
         // Add the cohorts.
+        $cohort = new stdClass();
+        $cohort->contextid = context_system::instance()->id;
+        $cohort->name = "All employees";
+        $cohort->idnumber = 'employee';
+        $employeeid = cohort_add_cohort($cohort);
         $cohort = new stdClass();
         $cohort->contextid = context_system::instance()->id;
         $cohort->name = "All faculty";
@@ -310,39 +343,41 @@ class local_ldap_sync_testcase extends advanced_testcase {
         // Faculty and staff should have two members and staff(pt) should have one.
         $plugin = new local_ldap();
         $plugin->sync_cohorts_by_attribute();
+        $members = $DB->count_records('cohort_members', array('cohortid' => $employeeid));
+        $this->assertEquals(2000, $members);
         $members = $DB->count_records('cohort_members', array('cohortid' => $facultyid));
-        $this->assertEquals(2, $members);
+        $this->assertEquals(1000, $members);
         $members = $DB->count_records('cohort_members', array('cohortid' => $staffid));
-        $this->assertEquals(2, $members);
+        $this->assertEquals(1000, $members);
         $members = $DB->count_records('cohort_members', array('cohortid' => $staffptid));
-        $this->assertEquals(1, $members);
+        $this->assertEquals(40, $members);
 
         // Remove a user and then ensure he's re-added.
         $members = $plugin->get_cohort_members($staffid);
         cohort_remove_member($staffid, current($members)->id);
         $members = $DB->count_records('cohort_members', array('cohortid' => $staffid));
-        $this->assertEquals(1, $members);
+        $this->assertEquals(999, $members);
         $plugin->sync_cohorts_by_attribute();
         $members = $DB->count_records('cohort_members', array('cohortid' => $staffid));
-        $this->assertEquals(2, $members);
+        $this->assertEquals(1000, $members);
 
         // Add an affiliation in LDAP and ensure he'd added.
-        ldap_mod_add($connection, "cn=username3,ou=users,$topdn",
+        ldap_mod_add($connection, "cn=username500,ou=users,$topdn",
             array('eduPersonAffiliation' => 'faculty'));
         $members = $DB->count_records('cohort_members', array('cohortid' => $facultyid));
-        $this->assertEquals(2, $members);
+        $this->assertEquals(1000, $members);
         $plugin->sync_cohorts_by_attribute();
         $members = $DB->count_records('cohort_members', array('cohortid' => $facultyid));
-        $this->assertEquals(3, $members);
+        $this->assertEquals(1001, $members);
 
         // Remove a user from a group in LDAP and ensure he's deleted.
-        ldap_mod_del($connection, "cn=username3,ou=users,$topdn",
+        ldap_mod_del($connection, "cn=username400,ou=users,$topdn",
             array('eduPersonAffiliation' => 'staff'));
         $members = $DB->count_records('cohort_members', array('cohortid' => $staffid));
-        $this->assertEquals(2, $members);
+        $this->assertEquals(1000, $members);
         $plugin->sync_cohorts_by_attribute();
         $members = $DB->count_records('cohort_members', array('cohortid' => $staffid));
-        $this->assertEquals(1, $members);
+        $this->assertEquals(999, $members);
 
         // Cleanup.
         $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, $testcontainer);
