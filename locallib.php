@@ -130,34 +130,46 @@ class local_ldap extends auth_plugin_ldap {
             array_push($contexts, $this->config->create_context);
         }
 
+        $ldappagedresults = ldap_paged_results_supported($this->config->ldap_version, $ldapconnection);
+        $ldapcookie = '';
+
         foreach ($contexts as $context) {
             $context = trim($context);
             if (empty ($context)) {
                 continue;
             }
 
-            if ($this->config->search_sub) {
-                // Use ldap_search to find first group from subtree.
-                $ldapresult = ldap_search($ldapconnection, $context, $filter, array ($this->config->group_attribute));
-            } else {
-                // Search only in this context.
-                $ldapresult = ldap_list($ldapconnection, $context, $filter, array ($this->config->group_attribute));
-            }
-            $groups = ldap_get_entries($ldapconnection, $ldapresult);
-
-            // Add found groups to list.
-            for ($i = 0; $i < count($groups) - 1; $i++) {
-                $groupcn = $groups[$i][$this->config->group_attribute][0];
-                array_push($fresult, ($groups[$i][$this->config->group_attribute][0]));
-
-                // Keep the dn/cn in cache for processing.
-                if ($this->config->process_nested_groups) {
-                    $groupdn = $groups[$i]['dn'];
-                    $this->groupdnscache[$groupdn] = $groupcn;
+            do {
+                if ($ldappagedresults) {
+                    ldap_control_paged_result($ldapconnection, $this->config->pagesize, true, $ldapcookie);
                 }
-            }
+                if ($this->config->search_sub) {
+                    // Use ldap_search to find first group from subtree.
+                    $ldapresult = ldap_search($ldapconnection, $context, $filter, array ($this->config->group_attribute));
+                } else {
+                    // Search only in this context.
+                    $ldapresult = ldap_list($ldapconnection, $context, $filter, array ($this->config->group_attribute));
+                }
+                $groups = ldap_get_entries($ldapconnection, $ldapresult);
+
+                if ($ldappagedresults) {
+                    ldap_control_paged_result_response($ldapconnection, $ldapresult, $ldapcookie);
+                }
+
+                // Add found groups to list.
+                for ($i = 0; $i < count($groups) - 1; $i++) {
+                    $groupcn = $groups[$i][$this->config->group_attribute][0];
+                    array_push($fresult, ($groups[$i][$this->config->group_attribute][0]));
+
+                    // Keep the dn/cn in cache for processing.
+                    if ($this->config->process_nested_groups) {
+                        $groupdn = $groups[$i]['dn'];
+                        $this->groupdnscache[$groupdn] = $groupcn;
+                    }
+                }
+            } while ($ldappagedresults && $ldapcookie !== null && $ldapcookie != '');
         }
-        $this->ldap_close();
+        $this->ldap_close(true);
         return $fresult;
     }
 

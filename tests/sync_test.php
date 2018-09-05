@@ -90,6 +90,16 @@ class local_ldap_sync_testcase extends advanced_testcase {
             ldap_add($connection, 'cn='.$o['cn'].',ou=groups,'.$topdn, $o);
         }
 
+        // Create a bunch of empty groups to simulate a large deployment.
+        for ($i = 1; $i <= 2000; $i++) {
+            $u = rand(1, 2000);
+            $o = array();
+            $o['objectClass'] = array('groupOfNames');
+            $o['cn']          = "emptygroup{$i}";
+            $o['member']      = array("cn=username{$u},ou=users,".$topdn);
+            ldap_add($connection, 'cn='.$o['cn'].',ou=groups,'.$topdn, $o);
+        }
+
         // Create all employees group.
         $o = array();
         $o['objectClass'] = array('groupOfNames');
