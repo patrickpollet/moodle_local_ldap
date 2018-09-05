@@ -355,8 +355,12 @@ class local_ldap_sync_testcase extends advanced_testcase {
         $cohort->idnumber = 'staff(pt)';
         $staffptid = cohort_add_cohort($cohort);
 
-        // Faculty and staff should have two members and staff(pt) should have one.
+        // Count the distinct attribute values.
         $plugin = new local_ldap();
+        $attributes = $plugin->get_attribute_distinct_values();
+        $this->assertEquals(4, count($attributes));
+
+        // Faculty and staff should have two members and staff(pt) should have one.
         $plugin->sync_cohorts_by_attribute();
         $members = $DB->count_records('cohort_members', array('cohortid' => $employeeid));
         $this->assertEquals(2000, $members);
