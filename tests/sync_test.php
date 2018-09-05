@@ -171,8 +171,13 @@ class local_ldap_sync_testcase extends advanced_testcase {
         $cohort->idnumber = 'english(bis)';
         $englishbisid = cohort_add_cohort($cohort);
 
-        // All three cohorts should have three members.
+        // We should find 2004 groups: the 2000 random groups, the three departments,
+        // and the all employees group.
         $plugin = new local_ldap();
+        $groups = $plugin->ldap_get_grouplist();
+        $this->assertEquals(2004, count($groups));
+
+        // All three cohorts should have three members.
         $plugin->sync_cohorts_by_group();
         $members = $DB->count_records('cohort_members', array('cohortid' => $historyid));
         $this->assertEquals(3, $members);
