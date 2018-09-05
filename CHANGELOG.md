@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Fixed bug where attribute syncing could fail in large Active Directory environments
+- Fixed bug where group syncing could fail in large Active Directory environments
+- Updated tests to use large data sets
+- Added optional unit test support for Active Directory
+
 ## 3.4.0 - 2018-05-04
 
 - Updated for GDPR compliance

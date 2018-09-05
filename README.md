@@ -22,6 +22,10 @@ Usage
 -----
 Previous versions of this plugin used a CLI script. This is deprecated in favor of two [scheduled tasks](https://docs.moodle.org/31/en/Scheduled_tasks), one for syncing by group and another for syncing by attribute. Both are configured to run hourly and are disabled by default.
 
+Testing
+-------
+The code is tested against OpenLDAP on Travis CI. If you have a local Active Directory environment you may run the tests against it. See [PHPUnit#LDAP](https://docs.moodle.org/dev/PHPUnit#LDAP) for more information. You will need to set an additional constant, `TEST_AUTH_LDAP_USER_TYPE`, to `ad`.
+
 Author
 -----
 - Charles Fulton (fultonc@lafayette.edu)
