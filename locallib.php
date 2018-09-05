@@ -517,7 +517,7 @@ class local_ldap extends auth_plugin_ldap {
 
         }
 
-        $this->ldap_close();
+        $this->ldap_close(true);
         return $matchings;
     }
 
