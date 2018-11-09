@@ -159,7 +159,7 @@ class local_ldap extends auth_plugin_ldap {
                 // Add found groups to list.
                 for ($i = 0; $i < count($groups) - 1; $i++) {
                     $groupcn = $groups[$i][$this->config->group_attribute][0];
-                    array_push($fresult, ($groups[$i][$this->config->group_attribute][0]));
+                    array_push($fresult, ($groupcn));
 
                     // Keep the dn/cn in cache for processing.
                     if ($this->config->process_nested_groups) {
