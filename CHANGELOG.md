@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Minor code cleanup and internal documentation fixes
+
 ## 3.4.1 (September 7, 2018)
 
 - Fixed bug where attribute syncing could fail in large Active Directory environments
