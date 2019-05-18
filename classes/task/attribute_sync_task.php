@@ -15,6 +15,8 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * Scheduled task to sync cohorts based on attribute.
+ *
  * @package   local_ldap
  * @copyright 2016 Lafayette College ITS
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -26,11 +28,28 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot.'/local/ldap/locallib.php');
 
+/**
+ * Scheduled task to sync cohorts based on attributes.
+ *
+ * @package   local_ldap
+ * @copyright 2016 Lafayette College ITS
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class attribute_sync_task extends \core\task\scheduled_task {
+    /**
+     * Get the name of the task.
+     *
+     * @return string the name of the task
+     */
     public function get_name() {
          return get_string('attributesynctask', 'local_ldap');
     }
 
+    /**
+     * Execute the task.
+     *
+     * @see local_ldap::sync_cohorts_by_attribute()
+     */
     public function execute() {
         if ($plugin = new \local_ldap()) {
             $plugin->sync_cohorts_by_attribute();

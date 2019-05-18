@@ -15,6 +15,8 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * Task definitions for local_ldap.
+ *
  * @package   local_ldap
  * @category  task
  * @copyright 2016 Lafayette College ITS

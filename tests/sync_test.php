@@ -15,6 +15,8 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * PHPUnit tests for local_ldap.
+ *
  * @package   local_ldap
  * @copyright 2016 Lafayette College ITS
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -32,6 +34,13 @@ if (!defined('TEST_AUTH_LDAP_USER_TYPE')) {
     define('TEST_AUTH_LDAP_USER_TYPE', 'rfc2307');
 }
 
+/**
+ * PHPUnit tests for local_ldap.
+ *
+ * @package   local_ldap
+ * @copyright 2016 Lafayette College ITS
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class local_ldap_sync_testcase extends advanced_testcase {
 
     public function test_cohort_group_sync() {
@@ -402,6 +411,11 @@ class local_ldap_sync_testcase extends advanced_testcase {
         $this->recursive_delete(TEST_AUTH_LDAP_DOMAIN, $testcontainer);
     }
 
+    /**
+     * Return the approrpiate top-level OU depending on the environment.
+     *
+     * @return string The top-level OU.
+     */
     protected function get_test_container() {
         switch(TEST_AUTH_LDAP_USER_TYPE) {
             case 'rfc2307':
@@ -413,6 +427,11 @@ class local_ldap_sync_testcase extends advanced_testcase {
         }
     }
 
+    /**
+     * Return the approrpiate test OU depending on the environment.
+     *
+     * @return array The test container OU.
+     */
     protected function get_test_ou() {
         $o = array();
         switch(TEST_AUTH_LDAP_USER_TYPE) {
@@ -429,7 +448,16 @@ class local_ldap_sync_testcase extends advanced_testcase {
         return $o;
     }
 
-    // Create an ldap user. From auth_ldap.
+    /**
+     * Create an LDAP user in the test environment.
+     *
+     * Copied from auth_ldap_plugin_testcase\create_ldap_user. Extending that test
+     * environment caused all manner of problems; forking was more straightforward.
+     *
+     * @param resource $connection the LDAP connection
+     * @param string $topdn the top-level container
+     * @param integer $i incremented number for user uniqueness constraint
+     */
     protected function create_ldap_user($connection, $topdn, $i) {
         $o = array();
         $o['objectClass']   = array('inetOrgPerson', 'organizationalPerson', 'person', 'posixAccount');
@@ -445,12 +473,26 @@ class local_ldap_sync_testcase extends advanced_testcase {
         ldap_add($connection, 'cn='.$o['cn'].',ou=users,'.$topdn, $o);
     }
 
-    // Delete a user from ldap. From auth_ldap.
+    /**
+     * Delete an LDAP user in the test environment.
+     *
+     * Copied from auth_ldap_plugin_testcase\delete_ldap_user. Extending that test
+     * environment caused all manner of problems; forking was more straightforward.
+     *
+     * @param resource $connection the LDAP connection
+     * @param string $topdn the top-level container
+     * @param integer $i incremented number for user uniqueness constraint
+     */
     protected function delete_ldap_user($connection, $topdn, $i) {
         ldap_delete($connection, 'cn=username'.$i.',ou=users,'.$topdn);
     }
 
-    // Activate the ldap authentication plugin. From auth_ldap.
+    /**
+     * Activate the LDAP authentication plugin.
+     *
+     * Copied from auth_ldap_plugin_testcase\enable_plugin. Extending that test
+     * environment caused all manner of problems; forking was more straightforward.
+     */
     protected function enable_plugin() {
         $auths = get_enabled_auth_plugins(true);
         if (!in_array('ldap', $auths)) {

@@ -30,6 +30,10 @@ require_once($CFG->dirroot . '/auth/ldap/auth.php');
 
 /**
  * LDAP cohort sychronization.
+ *
+ * @package local_ldap
+ * @copyright 2013 onwards Patrick Pollet
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class local_ldap extends auth_plugin_ldap {
 
@@ -42,7 +46,6 @@ class local_ldap extends auth_plugin_ldap {
     /**
      * Constructor.
      */
-
     public function __construct() {
         // Revision March 2013 needed to fetch the proper LDAP parameters
         // host, context ... from table config_plugins see comments in https://tracker.moodle.org/browse/MDL-25011.
@@ -175,9 +178,10 @@ class local_ldap extends auth_plugin_ldap {
 
     /**
      * Search for group members on a openLDAP directory.
-     * return string[] array of usernames
+     *
+     * @param string $group the group name
+     * @return array Array of usernames
      */
-
     private function ldap_get_group_members_rfc($group) {
         global $CFG;
 
@@ -267,10 +271,14 @@ class local_ldap extends auth_plugin_ldap {
     }
 
     /**
-     * specific serach for active Directory  problems if more than 999 members
-     * recherche paginée voir http://forums.sun.com/thread.jspa?threadID=578347
+     * Search for group members in Active Directory.
+     *
+     * Differs from ldap_get_group_members_rfc() because of problems in Active Directory
+     * if there are more than 999 members. See http://forums.sun.com/thread.jspa?threadID=578347.
+     *
+     * @param string $group the group name
+     * @return array Array of usernames
      */
-
     private function ldap_get_group_members_ad($group) {
         global $CFG;
 
@@ -533,6 +541,12 @@ class local_ldap extends auth_plugin_ldap {
         return $matchings;
     }
 
+    /**
+     * Return users which have the given attribute value.
+     *
+     * @param string $attributevalue The attribute value.
+     * @return array usernames
+     */
     public function get_users_having_attribute_value($attributevalue) {
         global $CFG, $DB;
 
@@ -564,7 +578,12 @@ class local_ldap extends auth_plugin_ldap {
         return $ret;
     }
 
-    // TODO: document.
+    /**
+     * Get the members of a given cohort.
+     *
+     * @param int cohortid the cohort
+     * @return array array of user objects indexed by user id
+     */
     public function get_cohort_members($cohortid) {
         global $DB;
         $sql = " SELECT u.id,u.username
@@ -575,7 +594,13 @@ class local_ldap extends auth_plugin_ldap {
         return $DB->get_records_sql($sql, $params);
     }
 
-    // TODO: document.
+    /**
+     * Check whether a given user is in a given cohort.
+     *
+     * @param int $cohortid the cohort
+     * @param int $userid the user id
+     * @return bool
+     */
     public function cohort_is_member($cohortid, $userid) {
         global $DB;
         $params = array (
@@ -585,6 +610,12 @@ class local_ldap extends auth_plugin_ldap {
         return $DB->record_exists('cohort_members', $params);
     }
 
+    /**
+     * Synchronizes cohorts by LDAP attribute.
+     *
+     * @see \local_ldap\task\attribute_sync_task\execute()
+     * @return bool always returns true.
+     */
     public function sync_cohorts_by_attribute() {
         global $DB;
 
@@ -632,6 +663,12 @@ class local_ldap extends auth_plugin_ldap {
         return true;
     }
 
+    /**
+     * Synchronizes cohorts by LDAP group.
+     *
+     * @see \local_ldap\task\group_sync_task\execute()
+     * @return bool always returns true.
+     */
     public function sync_cohorts_by_group() {
         global $DB;
 

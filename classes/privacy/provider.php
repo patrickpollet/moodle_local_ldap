@@ -15,6 +15,8 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * Privacy implementation for local_ldap..
+ *
  * @package   local_ldap
  * @copyright 2018 Lafayette College ITS
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -24,6 +26,13 @@ namespace local_ldap\privacy;
 
 defined('MOODLE_INTERNAL') || die();
 
+/**
+ * Privacy subsystem for local_ldap implementing null_provider.
+ *
+ * @package   local_ldap
+ * @copyright 2018 Lafayette College ITS
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class provider implements
     // This plugin does not store any personal user data.
     \core_privacy\local\metadata\null_provider {

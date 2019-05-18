@@ -15,9 +15,10 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * Settings for local_ldap.
  *
  * @package local_ldap
- * @copyright 2013 onwards Patrick Pollet {@link mailto:pp@patrickpollet.net
+ * @copyright 2013 onwards Patrick Pollet {@link mailto:pp@patrickpollet.net}
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
