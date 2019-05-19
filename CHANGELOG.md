@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.4.2 (May 19, 2019)
 
 - Minor code cleanup and internal documentation fixes
 
