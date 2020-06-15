@@ -37,10 +37,10 @@ require_once($CFG->dirroot . '/auth/ldap/auth.php');
  */
 class local_ldap extends auth_plugin_ldap {
 
-    // Avoid infinite loop with nested groups in 'funny' directories.
+    /** @var array Avoid infinite loop with nested groups in 'funny' directories. */
     private $antirecursionarray;
 
-    // Cache for found group dns.
+    /** @vary array Cache for found group dns. */
     private $groupdnscache;
 
     /**
@@ -110,6 +110,8 @@ class local_ldap extends auth_plugin_ldap {
 
     /**
      * Return all groups declared in LDAP.
+     *
+     * @param string $filter Ldap filter to search on.
      * @return string[]
      */
     public function ldap_get_grouplist($filter = "*") {
@@ -435,6 +437,7 @@ class local_ldap extends auth_plugin_ldap {
      * rev 1012 traitement de l'execption avec active directory pour des groupes >1000 members
      * voir http://forums.sun.com/thread.jspa?threadID=578347
      *
+     * @param string $groupe the group name
      * @return string[] an array of username indexed by Moodle's userid
      */
     public function ldap_get_group_members($groupe) {
@@ -581,7 +584,7 @@ class local_ldap extends auth_plugin_ldap {
     /**
      * Get the members of a given cohort.
      *
-     * @param int cohortid the cohort
+     * @param int $cohortid the cohort
      * @return array array of user objects indexed by user id
      */
     public function get_cohort_members($cohortid) {
