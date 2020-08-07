@@ -40,7 +40,7 @@ class local_ldap extends auth_plugin_ldap {
     /** @var array Avoid infinite loop with nested groups in 'funny' directories. */
     private $antirecursionarray;
 
-    /** @vary array Cache for found group dns. */
+    /** @var array Cache for found group dns. */
     private $groupdnscache;
 
     /**
