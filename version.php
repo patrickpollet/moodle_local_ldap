@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_ldap';
-$plugin->version   = 2020061500;
+$plugin->version   = 2020091100;
 $plugin->requires  = 2019052000;
 $plugin->maturity  = MATURITY_STABLE;
 $plugin->release   = 'v3.6.0';

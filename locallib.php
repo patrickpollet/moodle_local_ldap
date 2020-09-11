@@ -68,6 +68,7 @@ class local_ldap extends auth_plugin_ldap {
         $extra = get_config('local_ldap');
         $this->merge_config($extra, 'group_attribute', 'cn');
         $this->merge_config($extra, 'group_class', 'groupOfNames');
+        $this->merge_config($extra, 'group_filter', '*');
         $this->merge_config($extra, 'process_nested_groups', 0);
         $this->merge_config($extra, 'cohort_synching_ldap_attribute_attribute', 'eduPersonAffiliation');
         $this->merge_config($extra, 'cohort_synching_ldap_attribute_idnumbers', '');
@@ -675,7 +676,11 @@ class local_ldap extends auth_plugin_ldap {
     public function sync_cohorts_by_group() {
         global $DB;
 
-        $ldapgroups = $this->ldap_get_grouplist();
+        $filter = '';
+        if($this->config->group_filter != '' || $this->config->group_filter !== '*')
+            $filter = $this->config->group_filter;
+
+        $ldapgroups = $this->ldap_get_grouplist($filter);
         foreach ($ldapgroups as $groupname) {
             if (!$cohort = $DB->get_record('cohort', array('idnumber' => $groupname), '*')) {
                 if (empty($this->config->cohort_synching_ldap_groups_autocreate_cohorts)) {
