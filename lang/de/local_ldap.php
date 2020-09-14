@@ -52,3 +52,5 @@ $string['synccohortgroup_info'] = '';
 $string['synccohortgroup'] = 'Moodle-Gruppen mit LDAP-Gruppen synchronisieren';
 $string['group_filter'] = 'LDAP-filter für Gruppen';
 $string['group_filter_desc'] = 'LDAP-Filter zum eingrenzen von Gruppen';
+$string['group_context'] = 'Zusätzliche Gruppen-OU\'s';
+$string['group_context_desc'] = 'Angeben von zusätzlichen OU\'s für die Gruppensuche. (Mit ";" separiert.)';
